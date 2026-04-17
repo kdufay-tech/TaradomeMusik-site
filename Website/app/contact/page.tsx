@@ -14,7 +14,7 @@ export default function ContactPage() {
             {[
               { label: "General Inquiries", value: SITE.email.general, href: `mailto:${SITE.email.general}` },
               { label: "Booking & Events", value: SITE.email.booking, href: `mailto:${SITE.email.booking}` },
-              { label: "Lagos Office", value: "+234 806 011 2549", href: `tel:${SITE.phone.lagos}` },
+              { label: "Lagos Office", value: "+234 916 012 3499", href: `tel:${SITE.phone.lagos}` },
               { label: "USA Office", value: "+1 678 379 8706", href: `tel:${SITE.phone.usa}` },
             ].map((c) => (
               <div key={c.label} className="card-surface p-5">

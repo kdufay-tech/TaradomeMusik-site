@@ -37,7 +37,7 @@ export default function AboutPage() {
           <h2 className="font-display text-2xl font-bold text-white mt-12 mb-4">Contact</h2>
           <p>General: <a href={`mailto:${SITE.email.general}`} className="text-ember-400 no-underline">{SITE.email.general}</a></p>
           <p>Booking: <a href={`mailto:${SITE.email.booking}`} className="text-ember-400 no-underline">{SITE.email.booking}</a></p>
-          <p>Lagos: <a href={`tel:${SITE.phone.lagos}`} className="text-white/60 no-underline">+234 806 011 2549</a></p>
+          <p>Lagos: <a href={`tel:${SITE.phone.lagos}`} className="text-white/60 no-underline">+234 916 012 3499</a></p>
           <p>USA: <a href={`tel:${SITE.phone.usa}`} className="text-white/60 no-underline">+1 678 379 8706</a></p>
         </div>
       </div>

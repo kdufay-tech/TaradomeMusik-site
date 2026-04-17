@@ -527,7 +527,7 @@ function Footer() {
             {SITE.email.booking}
           </a>
           <a href={`tel:${SITE.phone.lagos}`} className="block text-[13px] text-white/30 no-underline mb-2.5 hover:text-white/60 transition-colors">
-            Lagos: +234 806 011 2549
+            Lagos: +234 916 012 3499
           </a>
           <a href={`tel:${SITE.phone.usa}`} className="block text-[13px] text-white/30 no-underline mb-1 hover:text-white/60 transition-colors">
             USA: +1 678 379 8706

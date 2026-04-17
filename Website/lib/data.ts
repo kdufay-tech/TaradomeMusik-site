@@ -135,7 +135,7 @@ export const SITE = {
     booking: "booking@taradomemusik.com",
   },
   phone: {
-    lagos: "+2348060112549",
+    lagos: "+2349160123499",
     usa: "+16783798706",
   },
   address: "#5/7 Ademola Street, Ikoyi, Lagos",
