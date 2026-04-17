@@ -65,6 +65,7 @@ function Hero() {
           {Array(4).fill(null).map((_, i) => (
             <span key={i} className="flex gap-12">
               <span>✦ Easy On Me — IRhay</span>
+              <span>✦ Pandora — IRhay</span>
               <span>✦ Wings — IRhay</span>
               <span>✦ Surface — IRhay</span>
             </span>
@@ -162,54 +163,61 @@ function ArtistsSection() {
    ════════════════════════════════════════════════════════════ */
 function ReleaseCard({ release, index }: { release: typeof RELEASES[number]; index: number }) {
   return (
-    <div className="card-surface p-5" style={{ animationDelay: `${index * 0.15}s` }}>
-      {/* Cover art placeholder — replace with actual cover art when available */}
-      <div
-        className="aspect-square rounded-lg mb-4 relative overflow-hidden flex items-center justify-center"
-        style={{
-          background: `linear-gradient(135deg, #1a1a27, ${release.brandColor}30)`,
-        }}
-      >
-        <span
-          className="font-display text-4xl font-bold"
-          style={{ color: release.brandColor, opacity: 0.6 }}
-        >
-          {release.title.charAt(0)}
-        </span>
-        <span className="absolute top-2.5 left-2.5 bg-black/50 text-white/60 text-[10px] font-semibold font-body px-2.5 py-0.5 rounded-full tracking-wide uppercase">
+    <div
+      className="release-cover-card"
+      style={{ animationDelay: `${index * 0.15}s`, "--glow": `${release.brandColor}30` } as React.CSSProperties}
+    >
+      {/* Actual cover art */}
+      <div className="aspect-square relative overflow-hidden">
+        <Image
+          src={release.coverImage}
+          alt={`${release.title} — ${release.artistName}`}
+          fill
+          className="object-cover transition-transform duration-700 hover:scale-105"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        />
+        {/* Glass edge overlay */}
+        <div className="absolute inset-0 pointer-events-none z-10"
+          style={{
+            background: "linear-gradient(to top, rgba(7,7,10,0.7) 0%, transparent 50%)",
+          }}
+        />
+        <span className="absolute top-3 left-3 z-20 bg-black/60 backdrop-blur-sm text-white/70 text-[10px] font-semibold font-body px-3 py-1 rounded-full tracking-wide uppercase border border-white/[0.08]">
           {release.type}
         </span>
       </div>
 
-      <h4 className="font-body text-base font-semibold text-white mb-1">
-        {release.title}
-      </h4>
-      <p className="font-body text-[13px] text-white/40 mb-0.5">{release.artistName}</p>
-      <p className="font-body text-[11px] text-white/25">{release.date}</p>
+      <div className="p-5">
+        <h4 className="font-body text-base font-semibold text-white mb-1">
+          {release.title}
+        </h4>
+        <p className="font-body text-[13px] text-white/40 mb-0.5">{release.artistName}</p>
+        <p className="font-body text-[11px] text-white/25">{release.date}</p>
 
-      {/* DSP badges */}
-      <div className="flex gap-2 mt-3.5 flex-wrap">
-        {Object.keys(release.dsps).map((dsp) => (
-          <a
-            key={dsp}
-            href={(release.dsps as Record<string, string>)[dsp]}
-            target="_blank"
-            rel="noreferrer"
-            className="dsp-badge no-underline hover:text-white/60 hover:border-white/20 transition-colors"
-          >
-            {dsp.charAt(0).toUpperCase() + dsp.slice(1)}
-          </a>
-        ))}
-        {release.presave && (
-          <a
-            href={release.presave}
-            target="_blank"
-            rel="noreferrer"
-            className="text-[10px] font-body text-ember-400 border border-ember-400/30 px-2.5 py-0.5 rounded-full font-semibold tracking-wide no-underline hover:border-ember-400/60 transition-colors"
-          >
-            Pre-Save
-          </a>
-        )}
+        {/* DSP badges */}
+        <div className="flex gap-2 mt-3.5 flex-wrap">
+          {Object.keys(release.dsps).map((dsp) => (
+            <a
+              key={dsp}
+              href={(release.dsps as Record<string, string>)[dsp]}
+              target="_blank"
+              rel="noreferrer"
+              className="dsp-badge no-underline hover:text-white/60 hover:border-white/20 transition-colors"
+            >
+              {dsp.charAt(0).toUpperCase() + dsp.slice(1)}
+            </a>
+          ))}
+          {release.presave && (
+            <a
+              href={release.presave}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[10px] font-body text-ember-400 border border-ember-400/30 px-2.5 py-0.5 rounded-full font-semibold tracking-wide no-underline hover:border-ember-400/60 transition-colors"
+            >
+              Pre-Save
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -227,7 +235,7 @@ function ReleasesSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {RELEASES.map((r, i) => (
             <ReleaseCard key={r.title} release={r} index={i} />
           ))}
@@ -263,12 +271,12 @@ function InstitutionSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {PILLARS.map((p) => (
-            <div key={p.label} className="card-surface p-6">
-              <span className="text-xl text-sand-200 block mb-3">{p.icon}</span>
-              <h4 className="font-body text-[15px] font-semibold text-white mb-1.5">
+            <div key={p.label} className="glass-tile p-6" style={{ "--glow": "rgba(212, 189, 140, 0.12)" } as React.CSSProperties}>
+              <span className="text-xl text-sand-200 block mb-3 relative z-20">{p.icon}</span>
+              <h4 className="font-body text-[15px] font-semibold text-white mb-1.5 relative z-20">
                 {p.label}
               </h4>
-              <p className="font-body text-[13px] text-white/35 leading-relaxed">
+              <p className="font-body text-[13px] text-white/35 leading-relaxed relative z-20">
                 {p.desc}
               </p>
             </div>
@@ -280,7 +288,7 @@ function InstitutionSection() {
           {[
             { val: "2021", label: "Founded" },
             { val: "2", label: "Artists on Roster" },
-            { val: "3", label: "Releases Out Now" },
+            { val: "4", label: "Releases Out Now" },
             { val: "Lagos", label: "Headquarters" },
           ].map((s) => (
             <div key={s.label} className="text-center">
@@ -412,24 +420,41 @@ function FanCTASection() {
 function EcosystemBar() {
   return (
     <section className="bg-ink-800 py-16 px-6 border-t border-white/[0.04]">
-      <div className="max-w-6xl mx-auto flex items-center justify-center gap-8 flex-wrap">
+      <div className="max-w-6xl mx-auto flex flex-col items-center gap-8">
+        {/* Parent brand */}
+        <div className="flex items-center gap-4">
+          <Image
+            src={SITE.parentLogo}
+            alt="TáraDome Entertainment Group"
+            width={180}
+            height={60}
+            className="object-contain opacity-70 hover:opacity-100 transition-opacity duration-500"
+          />
+        </div>
         <span className="font-body text-xs text-white/30 tracking-[0.1em] uppercase">
           Part of TáraDome Entertainment Group
         </span>
-        <div className="flex gap-3">
+
+        {/* Division logos */}
+        <div className="flex gap-4 flex-wrap justify-center">
           {ECOSYSTEM.map((d) => (
             <a
               key={d.name}
               href={d.url}
               target={d.url.startsWith("http") ? "_blank" : undefined}
               rel="noreferrer"
-              className="ecosystem-link no-underline"
-              style={{
-                color: d.active ? d.color : "rgba(255,255,255,0.25)",
-                borderColor: d.active ? `${d.color}25` : "rgba(255,255,255,0.06)",
-              }}
+              className={`eco-logo-link ${!d.active ? "eco-logo-link--inactive" : ""}`}
             >
-              {d.name} {d.url.startsWith("http") ? "↗" : ""}
+              <Image
+                src={d.logo}
+                alt={d.name}
+                width={130}
+                height={38}
+                className="object-contain"
+              />
+              {d.url.startsWith("http") && (
+                <span className="absolute top-1.5 right-2 text-[9px] text-white/20 font-body">↗</span>
+              )}
             </a>
           ))}
         </div>
