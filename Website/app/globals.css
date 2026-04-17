@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,400;1,9..144,700;1,9..144,800;1,9..144,900&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300;1,9..40,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --font-display: 'Fraunces', serif;
+  --font-label:   'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+}
+
+html, body { height: 100%; }
+
+body {
+  @apply bg-ink-950 text-white antialiased;
+  font-family: var(--font-body);
+}
+
+::selection { background: rgba(255, 77, 45, 0.35); }
+
+/* ── Grain overlay ─────────────────────────────────── */
+.grain {
+  background-image: radial-gradient(rgba(255,255,255,.055) 1px, transparent 1px);
+  background-size: 14px 14px;
+  opacity: .22;
+  pointer-events: none;
+}
+
+/* ── Afro-future ambient glow ──────────────────────── */
+.afroGlow {
+  background:
+    radial-gradient(900px circle at 20% 10%,  rgba(124,58,237,.32),  transparent 55%),
+    radial-gradient(700px circle at 80% 40%,  rgba(47,230,184,.18),  transparent 55%),
+    radial-gradient(700px circle at 55% 80%,  rgba(255,77,45,.22),   transparent 55%);
+}
+
+/* ── Typography helpers ────────────────────────────── */
+.font-display  { font-family: var(--font-display); }
+.font-label    { font-family: var(--font-label); }
+.font-body     { font-family: var(--font-body); }
+
+/* ── Section entrance ──────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(36px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Animations ────────────────────────────────────── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes waveBar {
+  0%, 100% { transform: scaleY(0.2); }
+  50%       { transform: scaleY(1); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+
+.animate-fadeUp {
+  animation: fadeUp 0.9s ease both;
+}
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
+/* ── Scrollbar ─────────────────────────────────────── */
+::-webkit-scrollbar          { width: 3px; height: 3px; }
+::-webkit-scrollbar-track    { background: #07070a; }
+::-webkit-scrollbar-thumb    { background: rgba(255,240,214,.15); }
+
+/* ── Hide scrollbar for horizontal scroll tracks ───── */
+.scroll-hide::-webkit-scrollbar { display: none; }
+.scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }

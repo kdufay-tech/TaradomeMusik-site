@@ -1,0 +1,15 @@
+services:
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: taradome-swagger-ui
+    ports:
+      - "8080:8080"
+    environment:
+      SWAGGER_JSON: /spec/openapi.yaml
+      DISPLAY_REQUEST_DURATION: "true"
+      DOC_EXPANSION: "none"
+      DEFAULT_MODEL_EXPAND_DEPTH: "2"
+      DEFAULT_MODEL_RENDERING: "model"
+    volumes:
+      - ../openapi/taradome-openapi-v1.yaml:/spec/openapi.yaml:ro
+    restart: unless-stopped

@@ -1,0 +1,4428 @@
+﻿openapi: 3.0.3
+info:
+  title: TaradomeMusik Platform API
+  version: 1.0.0
+  description: Production-grade API spec (schema-complete baseline) for TaradomeMusik website + CRM + ledger + sponsorships + artist landing pages.
+
+servers:
+  - url: http://localhost:3001/v1
+  - url: https://api.taradomemusik.com/v1
+
+security:
+  -
+    bearerAuth:
+
+tags:
+  -
+    name: Auth
+  -
+    name: Artists
+  -
+    name: Releases
+  -
+    name: Tracks
+  -
+    name: Media
+  -
+    name: LandingPages
+  -
+    name: Spotlight
+  -
+    name: CRM
+  -
+    name: Events
+  -
+    name: Subscriptions
+  -
+    name: Payments
+  -
+    name: Partners
+  -
+    name: Sponsorships
+  -
+    name: Ledger
+  -
+    name: Royalties
+  -
+    name: Analytics
+  -
+    name: Admin
+  -
+    name: Webhooks
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    UUID:
+      type: string
+      format: uuid
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+    PageMeta:
+      type: object
+      properties:
+        limit:
+          type: integer
+        offset:
+          type: integer
+        total:
+          type: integer
+    Artist:
+      type: object
+      required:
+        - name
+        - slug
+      properties:
+        id:
+          $ref: #/components/schemas/UUID
+        orgId:
+          $ref: #/components/schemas/UUID
+        name:
+          type: string
+        slug:
+          type: string
+        bio:
+          type: string
+        origin:
+          type: string
+        genre:
+          type: string
+        imageUrl:
+          type: string
+        socials:
+          type: object
+          additionalProperties: true
+        status:
+          type: string
+          enum:
+            - active
+            - paused
+            - archived
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Release:
+      type: object
+      required:
+        - artistId
+        - title
+        - type
+        - releaseDate
+      properties:
+        id:
+          $ref: #/components/schemas/UUID
+        artistId:
+          $ref: #/components/schemas/UUID
+        title:
+          type: string
+        type:
+          type: string
+          enum:
+            - single
+            - ep
+            - album
+        releaseDate:
+          type: string
+          format: date
+        coverUrl:
+          type: string
+        upc:
+          type: string
+        status:
+          type: string
+          enum:
+            - draft
+            - scheduled
+            - live
+            - archived
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Track:
+      type: object
+      required:
+        - releaseId
+        - artistId
+        - title
+      properties:
+        id:
+          $ref: #/components/schemas/UUID
+        releaseId:
+          $ref: #/components/schemas/UUID
+        artistId:
+          $ref: #/components/schemas/UUID
+        title:
+          type: string
+        isrc:
+          type: string
+        durationMs:
+          type: integer
+        explicit:
+          type: boolean
+        previewAssetId:
+          $ref: #/components/schemas/UUID
+        audioAssetId:
+          $ref: #/components/schemas/UUID
+        status:
+          type: string
+          enum:
+            - draft
+            - live
+            - archived
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Fan:
+      type: object
+      properties:
+        id:
+          $ref: #/components/schemas/UUID
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        city:
+          type: string
+        region:
+          type: string
+        country:
+          type: string
+        consentEmail:
+          type: boolean
+        consentSms:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+        traits:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Partner:
+      type: object
+      properties:
+        id:
+          $ref: #/components/schemas/UUID
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+            - sponsor
+            - brand
+            - distributor
+            - media
+            - venue
+            - other
+        contactName:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+        contactPhone:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    LandingPage:
+      type: object
+      properties:
+        id:
+          $ref: #/components/schemas/UUID
+        type:
+          type: string
+          enum:
+            - artist
+            - release
+            - spotlight
+            - sponsor
+            - partnership
+            - campaign
+        slug:
+          type: string
+        title:
+          type: string
+        artistId:
+          $ref: #/components/schemas/UUID
+        releaseId:
+          $ref: #/components/schemas/UUID
+        partnerId:
+          $ref: #/components/schemas/UUID
+        content:
+          type: object
+          additionalProperties: true
+        status:
+          type: string
+          enum:
+            - draft
+            - published
+            - archived
+        publishedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    LedgerEntryCreate:
+      type: object
+      required:
+        - postedAt
+        - currency
+        - lines
+      properties:
+        postedAt:
+          type: string
+          format: date-time
+        memo:
+          type: string
+        currency:
+          type: string
+        sourceType:
+          type: string
+        sourceId:
+          $ref: #/components/schemas/UUID
+        lines:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            required:
+              - accountCode
+            properties:
+              accountCode:
+                type: string
+              debitCents:
+                type: integer
+              creditCents:
+                type: integer
+              artistId:
+                $ref: #/components/schemas/UUID
+              partnerId:
+                $ref: #/components/schemas/UUID
+              department:
+                type: string
+              metadata:
+                type: object
+                additionalProperties: true
+    RoyaltyStatement:
+      type: object
+      properties:
+        id:
+          $ref: #/components/schemas/UUID
+        artistId:
+          $ref: #/components/schemas/UUID
+        periodStart:
+          type: string
+          format: date
+        periodEnd:
+          type: string
+          format: date
+        grossCents:
+          type: integer
+        netCents:
+          type: integer
+        recoupedCents:
+          type: integer
+        payableCents:
+          type: integer
+        status:
+          type: string
+          enum:
+            - draft
+            - issued
+            - paid
+        createdAt:
+          type: string
+          format: date-time
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      security:
+
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refreshToken:
+                    type: string
+        401:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Error
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      security:
+
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Revoke refresh token
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Current user profile
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    $ref: #/components/schemas/UUID
+                  email:
+                    type: string
+                  role:
+                    type: string
+  /artists:
+    get:
+      tags:
+        - Artists
+      summary: List artists
+      parameters:
+        -
+          in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        -
+          in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+        -
+          in: query
+          name: q
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: #/components/schemas/Artist
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Artists
+      summary: Create Artist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/Artist
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Artist
+  /artists/{artistId}:
+    get:
+      tags:
+        - Artists
+      summary: Get Artist
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Artist
+    put:
+      tags:
+        - Artists
+      summary: Update Artist
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/Artist
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Artist
+    delete:
+      tags:
+        - Artists
+      summary: Delete Artist (soft-delete)
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /releases:
+    get:
+      tags:
+        - Releases
+      summary: List releases
+      parameters:
+        -
+          in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        -
+          in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+        -
+          in: query
+          name: q
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: #/components/schemas/Release
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Releases
+      summary: Create Release
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/Release
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Release
+  /releases/{releaseId}:
+    get:
+      tags:
+        - Releases
+      summary: Get Release
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Release
+    put:
+      tags:
+        - Releases
+      summary: Update Release
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/Release
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Release
+    delete:
+      tags:
+        - Releases
+      summary: Delete Release (soft-delete)
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /tracks:
+    get:
+      tags:
+        - Tracks
+      summary: List tracks
+      parameters:
+        -
+          in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        -
+          in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+        -
+          in: query
+          name: q
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: #/components/schemas/Track
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Tracks
+      summary: Create Track
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/Track
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Track
+  /tracks/{trackId}:
+    get:
+      tags:
+        - Tracks
+      summary: Get Track
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Track
+    put:
+      tags:
+        - Tracks
+      summary: Update Track
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/Track
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Track
+    delete:
+      tags:
+        - Tracks
+      summary: Delete Track (soft-delete)
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /fans:
+    get:
+      tags:
+        - Fans
+      summary: List fans
+      parameters:
+        -
+          in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        -
+          in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+        -
+          in: query
+          name: q
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: #/components/schemas/Fan
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Fans
+      summary: Create Fan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/Fan
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Fan
+  /fans/{fanId}:
+    get:
+      tags:
+        - Fans
+      summary: Get Fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Fan
+    put:
+      tags:
+        - Fans
+      summary: Update Fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/Fan
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Fan
+    delete:
+      tags:
+        - Fans
+      summary: Delete Fan (soft-delete)
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /partners:
+    get:
+      tags:
+        - Partners
+      summary: List partners
+      parameters:
+        -
+          in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        -
+          in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+        -
+          in: query
+          name: q
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: #/components/schemas/Partner
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Partners
+      summary: Create Partner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/Partner
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Partner
+  /partners/{partnerId}:
+    get:
+      tags:
+        - Partners
+      summary: Get Partner
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Partner
+    put:
+      tags:
+        - Partners
+      summary: Update Partner
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/Partner
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/Partner
+    delete:
+      tags:
+        - Partners
+      summary: Delete Partner (soft-delete)
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /landing-pages:
+    get:
+      tags:
+        - LandingPages
+      summary: List landing-pages
+      parameters:
+        -
+          in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        -
+          in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+        -
+          in: query
+          name: q
+          schema:
+            type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: #/components/schemas/LandingPage
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - LandingPages
+      summary: Create LandingPage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/LandingPage
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/LandingPage
+  /landing-pages/{pageId}:
+    get:
+      tags:
+        - LandingPages
+      summary: Get LandingPage
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/LandingPage
+    put:
+      tags:
+        - LandingPages
+      summary: Update LandingPage
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/LandingPage
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/LandingPage
+    delete:
+      tags:
+        - LandingPages
+      summary: Delete LandingPage (soft-delete)
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /crm/subscribe:
+    post:
+      tags:
+        - CRM
+      security:
+
+      summary: Public fan signup (CRM ingest)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - source
+              properties:
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                source:
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    type: string
+                consentEmail:
+                  type: boolean
+                  default: true
+                consentSms:
+                  type: boolean
+                  default: false
+                utm:
+                  type: object
+                  additionalProperties: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  fanId:
+                    $ref: #/components/schemas/UUID
+  /crm/fans/{fanId}/tags:
+    post:
+      tags:
+        - CRM
+      summary: Add tags to fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tags
+              properties:
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /crm/segments:
+    post:
+      tags:
+        - CRM
+      summary: Create segment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - rule
+              properties:
+                name:
+                  type: string
+                rule:
+                  type: object
+                  additionalProperties: true
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  segmentId:
+                    $ref: #/components/schemas/UUID
+    get:
+      tags:
+        - CRM
+      summary: List segments
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /crm/campaigns:
+    post:
+      tags:
+        - CRM
+      summary: Create campaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - channel
+              properties:
+                name:
+                  type: string
+                channel:
+                  type: string
+                budgetCents:
+                  type: integer
+                startsAt:
+                  type: string
+                  format: date-time
+                endsAt:
+                  type: string
+                  format: date-time
+                metadata:
+                  type: object
+                  additionalProperties: true
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaignId:
+                    $ref: #/components/schemas/UUID
+    get:
+      tags:
+        - CRM
+      summary: List campaigns
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /events:
+    post:
+      tags:
+        - Events
+      security:
+
+      summary: Public event ingest (page_view, preview_play, etc)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - occurredAt
+              properties:
+                type:
+                  type: string
+                fanId:
+                  $ref: #/components/schemas/UUID
+                entityType:
+                  type: string
+                entityId:
+                  $ref: #/components/schemas/UUID
+                utm:
+                  type: object
+                  additionalProperties: true
+                occurredAt:
+                  type: string
+                  format: date-time
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+    get:
+      tags:
+        - Events
+      summary: List events (admin)
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /ledger/entries:
+    post:
+      tags:
+        - Ledger
+      summary: Post double-entry ledger transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: #/components/schemas/LedgerEntryCreate
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entryId:
+                    $ref: #/components/schemas/UUID
+                  status:
+                    type: string
+    get:
+      tags:
+        - Ledger
+      summary: List ledger entries
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /ledger/reports/trial-balance:
+    get:
+      tags:
+        - Ledger
+      summary: Trial balance report
+      parameters:
+        -
+          in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        -
+          in: query
+          name: to
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /ledger/reports/pnl:
+    get:
+      tags:
+        - Ledger
+      summary: Profit & Loss report
+      parameters:
+        -
+          in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        -
+          in: query
+          name: to
+          schema:
+            type: string
+            format: date
+        -
+          in: query
+          name: department
+          schema:
+            type: string
+        -
+          in: query
+          name: artistId
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /royalties/statements:
+    get:
+      tags:
+        - Royalties
+      summary: List royalty statements
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: #/components/schemas/RoyaltyStatement
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /royalties/statements/generate:
+    post:
+      tags:
+        - Royalties
+      summary: Generate royalty statements job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - periodStart
+                - periodEnd
+              properties:
+                periodStart:
+                  type: string
+                  format: date
+                periodEnd:
+                  type: string
+                  format: date
+                artistIds:
+                  type: array
+                  items:
+                    $ref: #/components/schemas/UUID
+      responses:
+        202:
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+  /royalties/statements/{statementId}:
+    get:
+      tags:
+        - Royalties
+      summary: Get royalty statement
+      parameters:
+        -
+          in: path
+          name: statementId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: #/components/schemas/RoyaltyStatement
+  /sponsorships/packages:
+    get:
+      tags:
+        - Sponsorships
+      summary: List sponsorship packages
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Sponsorships
+      summary: Create sponsorship package
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                priceCents:
+                  type: integer
+                deliverables:
+                  type: object
+                  additionalProperties: true
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  packageId:
+                    $ref: #/components/schemas/UUID
+  /sponsorships/campaigns:
+    get:
+      tags:
+        - Sponsorships
+      summary: List sponsorship campaigns
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Sponsorships
+      summary: Create sponsorship campaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - partnerId
+                - packageId
+                - name
+              properties:
+                partnerId:
+                  $ref: #/components/schemas/UUID
+                packageId:
+                  $ref: #/components/schemas/UUID
+                name:
+                  type: string
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                budgetCents:
+                  type: integer
+                kpis:
+                  type: object
+                  additionalProperties: true
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaignId:
+                    $ref: #/components/schemas/UUID
+  /sponsorships/campaigns/{campaignId}/deliverables:
+    post:
+      tags:
+        - Sponsorships
+      summary: Add deliverable to campaign
+      parameters:
+        -
+          in: path
+          name: campaignId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+              properties:
+                type:
+                  type: string
+                dueAt:
+                  type: string
+                  format: date-time
+                evidenceUrls:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deliverableId:
+                    $ref: #/components/schemas/UUID
+    get:
+      tags:
+        - Sponsorships
+      summary: List deliverables for campaign
+      parameters:
+        -
+          in: path
+          name: campaignId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /media/presign:
+    post:
+      tags:
+        - Media
+      summary: Create pre-signed upload URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - mimeType
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - image
+                    - audio
+                    - video
+                    - document
+                mimeType:
+                  type: string
+                sizeBytes:
+                  type: integer
+                checksumSha256:
+                  type: string
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploadUrl:
+                    type: string
+                  assetId:
+                    $ref: #/components/schemas/UUID
+  /media/{assetId}:
+    get:
+      tags:
+        - Media
+      summary: Get media asset metadata
+      parameters:
+        -
+          in: path
+          name: assetId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /webhooks/stripe:
+    post:
+      tags:
+        - Webhooks
+      security:
+
+      summary: Stripe webhook receiver (idempotent)
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /webhooks/paypal:
+    post:
+      tags:
+        - Webhooks
+      security:
+
+      summary: PayPal webhook receiver (idempotent)
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /webhooks/flutterwave:
+    post:
+      tags:
+        - Webhooks
+      security:
+
+      summary: Flutterwave webhook receiver (idempotent)
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /spotlight/current:
+    get:
+      tags:
+        - Spotlight
+      security:
+
+      summary: Get current spotlight
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /spotlight:
+    post:
+      tags:
+        - Spotlight
+      summary: Create spotlight
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - month
+                - artistId
+                - headline
+              properties:
+                month:
+                  type: string
+                  format: date
+                artistId:
+                  $ref: #/components/schemas/UUID
+                headline:
+                  type: string
+                copy:
+                  type: string
+                featuredTrackId:
+                  $ref: #/components/schemas/UUID
+                ctaLabel:
+                  type: string
+                ctaTarget:
+                  type: string
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  spotlightId:
+                    $ref: #/components/schemas/UUID
+    get:
+      tags:
+        - Spotlight
+      summary: List spotlights
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /artists/{artistId}/releases:
+    get:
+      tags:
+        - Artists
+      summary: List releases for Artist
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: #/components/schemas/Release
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Artists
+      summary: Create releases for Artist
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+  /artists/{artistId}/releases/{itemId}:
+    get:
+      tags:
+        - Artists
+      summary: Get releases item
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Artists
+      summary: Delete releases item
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /artists/{artistId}/tracks:
+    get:
+      tags:
+        - Artists
+      summary: List tracks for Artist
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: #/components/schemas/Track
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Artists
+      summary: Create tracks for Artist
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+  /artists/{artistId}/tracks/{itemId}:
+    get:
+      tags:
+        - Artists
+      summary: Get tracks item
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Artists
+      summary: Delete tracks item
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /artists/{artistId}/analytics:
+    get:
+      tags:
+        - Artists
+      summary: List analytics for Artist
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /artists/{artistId}/analytics/{itemId}:
+    get:
+      tags:
+        - Artists
+      summary: Get analytics item
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Artists
+      summary: Delete analytics item
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /artists/{artistId}/royalties:
+    get:
+      tags:
+        - Artists
+      summary: List royalties for Artist
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: #/components/schemas/RoyaltyStatement
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /artists/{artistId}/royalties/{itemId}:
+    get:
+      tags:
+        - Artists
+      summary: Get royalties item
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Artists
+      summary: Delete royalties item
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /artists/{artistId}/members:
+    get:
+      tags:
+        - Artists
+      summary: List members for Artist
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Artists
+      summary: Create members for Artist
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+  /artists/{artistId}/members/{itemId}:
+    get:
+      tags:
+        - Artists
+      summary: Get members item
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Artists
+      summary: Delete members item
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /releases/{releaseId}/tracks:
+    get:
+      tags:
+        - Releases
+      summary: List tracks for Release
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: #/components/schemas/Track
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Releases
+      summary: Create tracks for Release
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+  /releases/{releaseId}/tracks/{itemId}:
+    get:
+      tags:
+        - Releases
+      summary: Get tracks item
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Releases
+      summary: Delete tracks item
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /releases/{releaseId}/analytics:
+    get:
+      tags:
+        - Releases
+      summary: List analytics for Release
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /releases/{releaseId}/analytics/{itemId}:
+    get:
+      tags:
+        - Releases
+      summary: Get analytics item
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Releases
+      summary: Delete analytics item
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /releases/{releaseId}/presave:
+    get:
+      tags:
+        - Releases
+      summary: List presave for Release
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /releases/{releaseId}/presave/{itemId}:
+    get:
+      tags:
+        - Releases
+      summary: Get presave item
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Releases
+      summary: Delete presave item
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /tracks/{trackId}/preview:
+    get:
+      tags:
+        - Tracks
+      summary: List preview for Track
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /tracks/{trackId}/preview/{itemId}:
+    get:
+      tags:
+        - Tracks
+      summary: Get preview item
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Tracks
+      summary: Delete preview item
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /tracks/{trackId}/analytics:
+    get:
+      tags:
+        - Tracks
+      summary: List analytics for Track
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /tracks/{trackId}/analytics/{itemId}:
+    get:
+      tags:
+        - Tracks
+      summary: Get analytics item
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Tracks
+      summary: Delete analytics item
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /tracks/{trackId}/assets:
+    get:
+      tags:
+        - Tracks
+      summary: List assets for Track
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /tracks/{trackId}/assets/{itemId}:
+    get:
+      tags:
+        - Tracks
+      summary: Get assets item
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Tracks
+      summary: Delete assets item
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /fans/{fanId}/tags:
+    get:
+      tags:
+        - Fans
+      summary: List tags for Fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Fans
+      summary: Create tags for Fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+  /fans/{fanId}/tags/{itemId}:
+    get:
+      tags:
+        - Fans
+      summary: Get tags item
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Fans
+      summary: Delete tags item
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /fans/{fanId}/events:
+    get:
+      tags:
+        - Fans
+      summary: List events for Fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Fans
+      summary: Create events for Fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+  /fans/{fanId}/events/{itemId}:
+    get:
+      tags:
+        - Fans
+      summary: Get events item
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Fans
+      summary: Delete events item
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /fans/{fanId}/subscriptions:
+    get:
+      tags:
+        - Fans
+      summary: List subscriptions for Fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Fans
+      summary: Create subscriptions for Fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+  /fans/{fanId}/subscriptions/{itemId}:
+    get:
+      tags:
+        - Fans
+      summary: Get subscriptions item
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Fans
+      summary: Delete subscriptions item
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /fans/{fanId}/purchases:
+    get:
+      tags:
+        - Fans
+      summary: List purchases for Fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Fans
+      summary: Create purchases for Fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+  /fans/{fanId}/purchases/{itemId}:
+    get:
+      tags:
+        - Fans
+      summary: Get purchases item
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Fans
+      summary: Delete purchases item
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /partners/{partnerId}/campaigns:
+    get:
+      tags:
+        - Partners
+      summary: List campaigns for Partner
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Partners
+      summary: Create campaigns for Partner
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+  /partners/{partnerId}/campaigns/{itemId}:
+    get:
+      tags:
+        - Partners
+      summary: Get campaigns item
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Partners
+      summary: Delete campaigns item
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /partners/{partnerId}/deliverables:
+    get:
+      tags:
+        - Partners
+      summary: List deliverables for Partner
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+    post:
+      tags:
+        - Partners
+      summary: Create deliverables for Partner
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+  /partners/{partnerId}/deliverables/{itemId}:
+    get:
+      tags:
+        - Partners
+      summary: Get deliverables item
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Partners
+      summary: Delete deliverables item
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /partners/{partnerId}/reports:
+    get:
+      tags:
+        - Partners
+      summary: List reports for Partner
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /partners/{partnerId}/reports/{itemId}:
+    get:
+      tags:
+        - Partners
+      summary: Get reports item
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Partners
+      summary: Delete reports item
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /landing-pages/{pageId}/publish:
+    get:
+      tags:
+        - LandingPages
+      summary: List publish for LandingPage
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /landing-pages/{pageId}/publish/{itemId}:
+    get:
+      tags:
+        - LandingPages
+      summary: Get publish item
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - LandingPages
+      summary: Delete publish item
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /landing-pages/{pageId}/unpublish:
+    get:
+      tags:
+        - LandingPages
+      summary: List unpublish for LandingPage
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /landing-pages/{pageId}/unpublish/{itemId}:
+    get:
+      tags:
+        - LandingPages
+      summary: Get unpublish item
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - LandingPages
+      summary: Delete unpublish item
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /landing-pages/{pageId}/preview:
+    get:
+      tags:
+        - LandingPages
+      summary: List preview for LandingPage
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    $ref: #/components/schemas/PageMeta
+  /landing-pages/{pageId}/preview/{itemId}:
+    get:
+      tags:
+        - LandingPages
+      summary: Get preview item
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - LandingPages
+      summary: Delete preview item
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: path
+          name: itemId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /admin/health:
+    get:
+      tags:
+        - Admin
+      summary: Health check (internal)
+      security:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/metrics:
+    get:
+      tags:
+        - Admin
+      summary: Prometheus metrics (internal)
+      security:
+        -
+          bearerAuth:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/audit/logs:
+    get:
+      tags:
+        - Admin
+      summary: List audit logs
+      security:
+        -
+          bearerAuth:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      tags:
+        - Admin
+      summary: Write audit log (internal)
+      security:
+        -
+          bearerAuth:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/feature-flags:
+    get:
+      tags:
+        - Admin
+      summary: List feature flags
+      security:
+        -
+          bearerAuth:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    post:
+      tags:
+        - Admin
+      summary: Create feature flag
+      security:
+        -
+          bearerAuth:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/feature-flags/{flagKey}:
+    put:
+      tags:
+        - Admin
+      summary: Update feature flag
+      security:
+        -
+          bearerAuth:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    delete:
+      tags:
+        - Admin
+      summary: Delete feature flag
+      security:
+        -
+          bearerAuth:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/jobs:
+    get:
+      tags:
+        - Admin
+      summary: List background jobs
+      security:
+        -
+          bearerAuth:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/jobs/{jobId}:
+    get:
+      tags:
+        - Admin
+      summary: Get job status
+      security:
+        -
+          bearerAuth:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/jobs/{jobId}/cancel:
+    post:
+      tags:
+        - Admin
+      summary: Cancel job
+      security:
+        -
+          bearerAuth:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /admin/rate-limits:
+    get:
+      tags:
+        - Admin
+      summary: Get rate limit config
+      security:
+        -
+          bearerAuth:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+    put:
+      tags:
+        - Admin
+      summary: Update rate limit config
+      security:
+        -
+          bearerAuth:
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/artists:
+    get:
+      tags:
+        - Analytics
+      summary: Aggregate analytics for artists
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/artists/{artistId}:
+    get:
+      tags:
+        - Analytics
+      summary: Analytics for single Artist
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/artists/{artistId}/timeseries:
+    get:
+      tags:
+        - Analytics
+      summary: Timeseries analytics for Artist
+      parameters:
+        -
+          in: path
+          name: artistId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        -
+          in: query
+          name: to
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/releases:
+    get:
+      tags:
+        - Analytics
+      summary: Aggregate analytics for releases
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/releases/{releaseId}:
+    get:
+      tags:
+        - Analytics
+      summary: Analytics for single Release
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/releases/{releaseId}/timeseries:
+    get:
+      tags:
+        - Analytics
+      summary: Timeseries analytics for Release
+      parameters:
+        -
+          in: path
+          name: releaseId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        -
+          in: query
+          name: to
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/tracks:
+    get:
+      tags:
+        - Analytics
+      summary: Aggregate analytics for tracks
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/tracks/{trackId}:
+    get:
+      tags:
+        - Analytics
+      summary: Analytics for single Track
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/tracks/{trackId}/timeseries:
+    get:
+      tags:
+        - Analytics
+      summary: Timeseries analytics for Track
+      parameters:
+        -
+          in: path
+          name: trackId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        -
+          in: query
+          name: to
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/fans:
+    get:
+      tags:
+        - Analytics
+      summary: Aggregate analytics for fans
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/fans/{fanId}:
+    get:
+      tags:
+        - Analytics
+      summary: Analytics for single Fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/fans/{fanId}/timeseries:
+    get:
+      tags:
+        - Analytics
+      summary: Timeseries analytics for Fan
+      parameters:
+        -
+          in: path
+          name: fanId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        -
+          in: query
+          name: to
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/partners:
+    get:
+      tags:
+        - Analytics
+      summary: Aggregate analytics for partners
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/partners/{partnerId}:
+    get:
+      tags:
+        - Analytics
+      summary: Analytics for single Partner
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/partners/{partnerId}/timeseries:
+    get:
+      tags:
+        - Analytics
+      summary: Timeseries analytics for Partner
+      parameters:
+        -
+          in: path
+          name: partnerId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        -
+          in: query
+          name: to
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/landing-pages:
+    get:
+      tags:
+        - Analytics
+      summary: Aggregate analytics for landing-pages
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/landing-pages/{pageId}:
+    get:
+      tags:
+        - Analytics
+      summary: Analytics for single LandingPage
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/landing-pages/{pageId}/timeseries:
+    get:
+      tags:
+        - Analytics
+      summary: Timeseries analytics for LandingPage
+      parameters:
+        -
+          in: path
+          name: pageId
+          required: true
+          schema:
+            $ref: #/components/schemas/UUID
+        -
+          in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        -
+          in: query
+          name: to
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+

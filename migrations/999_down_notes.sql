@@ -1,0 +1,3 @@
+-- 999_down_notes.sql
+-- This pack is forward-migration focused. For down migrations, use a migration tool (Flyway/Liquibase/Prisma)
+-- and generate down scripts per environment policy.

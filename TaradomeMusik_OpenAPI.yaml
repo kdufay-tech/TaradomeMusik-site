@@ -1,0 +1,36 @@
+
+openapi: 3.0.3
+info:
+  title: TaradomeMusik Platform API
+  version: 1.0.0
+servers:
+  - url: https://api.taradomemusik.com/v1
+
+paths:
+  /artists:
+    get:
+      summary: List artists
+      responses:
+        '200':
+          description: Success
+
+  /crm/subscribe:
+    post:
+      summary: Subscribe fan to CRM
+      responses:
+        '200':
+          description: Success
+
+  /ledger/entries:
+    post:
+      summary: Post ledger entry
+      responses:
+        '201':
+          description: Entry Created
+
+  /sponsorships/campaigns:
+    post:
+      summary: Create sponsorship campaign
+      responses:
+        '201':
+          description: Campaign Created

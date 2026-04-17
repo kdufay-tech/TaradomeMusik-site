@@ -1,0 +1,125 @@
+
+openapi: 3.0.3
+info:
+  title: TaradomeMusik Platform API
+  version: 2.0.0
+  description: Full Production API Spec for TaradomeMusik Platform
+
+servers:
+  - url: https://api.taradomemusik.com/v1
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+
+  # ================= AUTH =================
+  /auth/login:
+    post:
+      summary: User login
+      security: []
+      requestBody:
+        required: true
+      responses:
+        '200':
+          description: JWT issued
+
+  /auth/refresh:
+    post:
+      summary: Refresh JWT
+      responses:
+        '200':
+          description: Token refreshed
+
+  # ================= ARTISTS =================
+  /artists:
+    get:
+      summary: List artists
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Create artist
+      responses:
+        '201': { description: Created }
+
+  /artists/{artistId}:
+    get:
+      summary: Get artist
+      parameters:
+        - in: path
+          name: artistId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK }
+
+  # ================= RELEASES =================
+  /releases:
+    get:
+      summary: List releases
+      responses:
+        '200': { description: OK }
+
+  /releases/{releaseId}/tracks:
+    get:
+      summary: Get tracks for release
+      responses:
+        '200': { description: OK }
+
+  # ================= CRM =================
+  /crm/subscribe:
+    post:
+      summary: Capture fan
+      responses:
+        '200': { description: OK }
+
+  /crm/segments:
+    post:
+      summary: Create segment
+      responses:
+        '201': { description: Created }
+
+  # ================= PAYMENTS =================
+  /payments/webhook/stripe:
+    post:
+      summary: Stripe webhook
+      security: []
+      responses:
+        '200': { description: OK }
+
+  # ================= LEDGER =================
+  /ledger/entries:
+    post:
+      summary: Post ledger entry
+      responses:
+        '201': { description: Entry Created }
+
+  /ledger/reports/trial-balance:
+    get:
+      summary: Trial balance report
+      responses:
+        '200': { description: OK }
+
+  # ================= ROYALTIES =================
+  /royalties/statements/generate:
+    post:
+      summary: Generate royalty statements
+      responses:
+        '202': { description: Job Accepted }
+
+  # ================= PARTNERS =================
+  /partners:
+    get:
+      summary: List partners
+      responses:
+        '200': { description: OK }
+
+  /sponsorships/campaigns:
+    post:
+      summary: Create sponsorship campaign
+      responses:
+        '201': { description: Created }

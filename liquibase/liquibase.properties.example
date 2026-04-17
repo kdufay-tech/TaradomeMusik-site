@@ -1,0 +1,4 @@
+url: jdbc:postgresql://localhost:5432/taradome
+username: taradome_admin
+password: CHANGE_ME
+changeLogFile: changelog-master.xml

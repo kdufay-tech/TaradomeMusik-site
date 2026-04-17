@@ -1,0 +1,8 @@
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "taradome-prod-rg"
+    storage_account_name = "taradomeprodtfstate"
+    container_name       = "tfstate"
+    key                  = "azure/terraform.tfstate"
+  }
+}

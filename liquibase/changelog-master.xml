@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.23.xsd">
+
+  <changeSet id="baseline-001-extensions" author="taradome">
+    <sqlFile path="../migrations/001_extensions.sql" relativeToChangelogFile="true" />
+  </changeSet>
+
+  <changeSet id="baseline-002-core" author="taradome">
+    <sqlFile path="../migrations/002_core_org_users.sql" relativeToChangelogFile="true" />
+  </changeSet>
+
+  <changeSet id="baseline-003-artists-catalog" author="taradome">
+    <sqlFile path="../migrations/003_artists_catalog.sql" relativeToChangelogFile="true" />
+  </changeSet>
+
+  <changeSet id="baseline-004-landing" author="taradome">
+    <sqlFile path="../migrations/004_landing_spotlight.sql" relativeToChangelogFile="true" />
+  </changeSet>
+
+  <changeSet id="baseline-005-crm" author="taradome">
+    <sqlFile path="../migrations/005_crm_events.sql" relativeToChangelogFile="true" />
+  </changeSet>
+
+  <changeSet id="baseline-006-subs" author="taradome">
+    <sqlFile path="../migrations/006_subscriptions_payments.sql" relativeToChangelogFile="true" />
+  </changeSet>
+
+  <changeSet id="baseline-007-sponsors" author="taradome">
+    <sqlFile path="../migrations/007_sponsorships.sql" relativeToChangelogFile="true" />
+  </changeSet>
+
+  <changeSet id="baseline-008-ledger-royalties" author="taradome">
+    <sqlFile path="../migrations/008_ledger_royalties.sql" relativeToChangelogFile="true" />
+  </changeSet>
+
+</databaseChangeLog>
