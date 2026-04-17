@@ -1,281 +1,46 @@
-﻿"use client";
-
 import Link from "next/link";
-import { site } from "@/data/site";
-
-const EMBER = "#D4844C";
-const JADE = "#2fe6b8";
+import { SITE, ECOSYSTEM } from "@/lib/data";
 
 export default function AboutPage() {
   return (
-    <>
-      {/* Hero */}
-      <section style={{
-        minHeight: "60vh", position: "relative", overflow: "hidden",
-        display: "flex", alignItems: "center",
-        padding: "120px clamp(24px,5vw,80px) 80px",
-        background: "#07070a",
-      }}>
-        <div style={{
-          position: "absolute", top: "-10%", right: "-5%", width: "50%", height: "70%",
-          background: `radial-gradient(ellipse, ${EMBER}14 0%, transparent 65%)`,
-          pointerEvents: "none",
-        }} />
-
-        <div style={{ maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
-          <div style={{
-            display: "flex", alignItems: "center", gap: "14px", marginBottom: "24px",
-            fontFamily: "'Syne',sans-serif", fontSize: "10.5px", fontWeight: 700,
-            letterSpacing: "0.3em", textTransform: "uppercase", color: EMBER,
-          }}>
-            <span style={{ display: "inline-block", width: "28px", height: "1px", background: EMBER }} />
-            The Institution
+    <section className="min-h-screen bg-ink-950 pt-28 pb-24 px-6">
+      <div className="max-w-4xl mx-auto">
+        <span className="section-label text-sand-200">About</span>
+        <h1 className="section-heading mt-2 mb-6" style={{ fontSize: "clamp(36px, 5vw, 56px)" }}>The Institution.</h1>
+        <div className="space-y-6 font-body text-white/45 leading-relaxed">
+          <p>TáradomeMusik was founded in 2021 on a conviction: African artists deserve more than a platform — they deserve a partner who fights for ownership, invests in development, and builds toward generational wealth.</p>
+          <p>We are the music division of TáraDome Entertainment Group, an African-owned institution spanning music, film, fashion, and technology. Rooted in Lagos, distributed globally across Spotify, Apple Music, Boomplay, AudioMack, and OneRPM.</p>
+          <p>Based at {SITE.address} — our mission is to build lasting, profitable careers for our artists through transparent, data-informed, and creatively empowering partnership.</p>
+          <h2 className="font-display text-2xl font-bold text-white mt-12 mb-4">Our Principles</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              { t: "Artist-Centricity", d: "Artists are primary stakeholders in every decision we make." },
+              { t: "Masters Ownership", d: "Artists retain their catalog. Always. No exceptions." },
+              { t: "Data-Informed Creativity", d: "Fan analytics combined with instinct and cultural knowledge." },
+              { t: "Operational Excellence", d: "Repeatable systems that scale with the roster." },
+            ].map((p) => (
+              <div key={p.t} className="card-surface p-5">
+                <h4 className="font-body text-sm font-semibold text-white mb-1">{p.t}</h4>
+                <p className="font-body text-[13px] text-white/35">{p.d}</p>
+              </div>
+            ))}
           </div>
-          <h1 style={{
-            fontFamily: "'Fraunces',serif", fontStyle: "italic",
-            fontSize: "clamp(52px,7.5vw,96px)", fontWeight: 900, color: "#fff0d6",
-            letterSpacing: "-0.035em", lineHeight: 1, marginBottom: "32px",
-          }}>
-            About<br />
-            <span style={{
-              background: `linear-gradient(130deg,#ffd07a 0%,${EMBER} 65%)`,
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-            }}>TÃ¡radomeMusik.</span>
-          </h1>
-          <p style={{
-            fontFamily: "'DM Sans',sans-serif", fontSize: "clamp(16px,1.8vw,20px)",
-            lineHeight: "1.75", color: "rgba(255,240,214,0.55)",
-            maxWidth: "680px",
-          }}>{site.missionLong}</p>
-        </div>
-      </section>
-
-      {/* Mission + Principles */}
-      <section style={{ background: "#fff9f0", padding: "80px clamp(24px,5vw,80px)" }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "clamp(40px,7vw,80px)" }}>
-            <div>
-              <div style={{
-                fontFamily: "'Syne',sans-serif", fontSize: "10px", fontWeight: 700,
-                letterSpacing: "0.3em", textTransform: "uppercase", color: "#ff4d2d",
-                display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px",
-              }}>
-                <span style={{ display: "inline-block", width: "24px", height: "1px", background: "#ff4d2d" }} />
-                Our Mission
-              </div>
-              <h2 style={{
-                fontFamily: "'Fraunces',serif", fontStyle: "italic",
-                fontSize: "clamp(28px,3.5vw,44px)", fontWeight: 900, color: "#0b0b12",
-                letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: "24px",
-              }}>Not just a label.<br /><span style={{ color: "#ff4d2d" }}>A legacy.</span></h2>
-              <p style={{
-                fontFamily: "'DM Sans',sans-serif", fontSize: "16px",
-                lineHeight: "1.75", color: "#1a1a27", marginBottom: "16px",
-              }}>{site.mission}</p>
-              <p style={{
-                fontFamily: "'DM Sans',sans-serif", fontSize: "14px",
-                lineHeight: "1.75", color: "rgba(26,26,39,0.55)",
-              }}>
-                Founded in 2021 and headquartered at {site.contact.address}. Distributed globally via OneRPM across Spotify, Apple Music, Boomplay, AudioMack, and beyond.
-              </p>
-            </div>
-
-            <div>
-              <div style={{
-                fontFamily: "'Syne',sans-serif", fontSize: "10px", fontWeight: 700,
-                letterSpacing: "0.3em", textTransform: "uppercase", color: "#2c5e5a",
-                display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px",
-              }}>
-                <span style={{ display: "inline-block", width: "24px", height: "1px", background: "#2c5e5a" }} />
-                Core Principles
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                {site.principles.map((p, i) => (
-                  <div key={p.title} style={{
-                    background: "#0b0b12", padding: "20px 24px",
-                    borderLeft: `2px solid ${i < 3 ? "#D4844C" : "#2fe6b8"}`,
-                  }}>
-                    <div style={{
-                      fontFamily: "'Fraunces',serif", fontSize: "16px",
-                      fontWeight: 700, color: "#fff0d6", marginBottom: "6px",
-                    }}>{p.title}</div>
-                    <div style={{
-                      fontFamily: "'DM Sans',sans-serif", fontSize: "13px",
-                      lineHeight: "1.6", color: "rgba(255,240,214,0.38)",
-                    }}>{p.desc}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <h2 className="font-display text-2xl font-bold text-white mt-12 mb-4">The Ecosystem</h2>
+          <div className="flex gap-3 flex-wrap">
+            {ECOSYSTEM.map((d) => (
+              <a key={d.name} href={d.url} target={d.url.startsWith("http") ? "_blank" : undefined} rel="noreferrer"
+                className="ecosystem-link no-underline" style={{ color: d.color, borderColor: `${d.color}25` }}>
+                {d.name} {d.url.startsWith("http") ? "↗" : ""}
+              </a>
+            ))}
           </div>
+          <h2 className="font-display text-2xl font-bold text-white mt-12 mb-4">Contact</h2>
+          <p>General: <a href={`mailto:${SITE.email.general}`} className="text-ember-400 no-underline">{SITE.email.general}</a></p>
+          <p>Booking: <a href={`mailto:${SITE.email.booking}`} className="text-ember-400 no-underline">{SITE.email.booking}</a></p>
+          <p>Lagos: <a href={`tel:${SITE.phone.lagos}`} className="text-white/60 no-underline">+234 806 011 2549</a></p>
+          <p>USA: <a href={`tel:${SITE.phone.usa}`} className="text-white/60 no-underline">+1 678 379 8706</a></p>
         </div>
-      </section>
-
-      {/* Stats */}
-      <section style={{
-        borderTop: "1px solid rgba(255,240,214,0.06)",
-        borderBottom: "1px solid rgba(255,240,214,0.06)",
-        padding: "0 clamp(24px,5vw,80px)",
-        background: "rgba(11,11,18,0.8)",
-      }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "2px" }}>
-          {site.stats.map(s => (
-            <div key={s.label} style={{ padding: "48px 24px", textAlign: "center", background: "rgba(255,255,255,0.015)" }}>
-              <div style={{
-                fontFamily: "'Fraunces',serif", fontStyle: "italic",
-                fontSize: "clamp(32px,4vw,48px)", fontWeight: 700, color: "#ffd07a", lineHeight: 1,
-              }}>{s.value}</div>
-              <div style={{
-                fontFamily: "'Syne',sans-serif", fontSize: "9.5px", fontWeight: 700,
-                letterSpacing: "0.2em", textTransform: "uppercase",
-                color: "rgba(255,240,214,0.28)", marginTop: "8px",
-              }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Contact */}
-      <section style={{ padding: "80px clamp(24px,5vw,80px)", background: "#07070a" }}>
-        <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "clamp(40px,6vw,80px)" }}>
-            <div>
-              <div style={{
-                fontFamily: "'Syne',sans-serif", fontSize: "10px", fontWeight: 700,
-                letterSpacing: "0.3em", textTransform: "uppercase", color: JADE,
-                display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px",
-              }}>
-                <span style={{ display: "inline-block", width: "24px", height: "1px", background: JADE }} />
-                Get in Touch
-              </div>
-              <h2 style={{
-                fontFamily: "'Fraunces',serif", fontStyle: "italic",
-                fontSize: "clamp(32px,4.5vw,56px)", fontWeight: 900, color: "#fff0d6",
-                letterSpacing: "-0.03em", lineHeight: 1, marginBottom: "32px",
-              }}>Let's talk<span style={{ color: JADE }}>.</span></h2>
-
-              {[
-                { label: "General", value: site.contact.email, href: `mailto:${site.contact.email}` },
-                { label: "Booking", value: site.contact.bookingEmail, href: `mailto:${site.contact.bookingEmail}` },
-                { label: "Address", value: site.contact.address, href: "#" },
-                { label: "Phone (NG)", value: site.contact.phones[0], href: `tel:${site.contact.phones[0]}` },
-                { label: "Phone (US)", value: site.contact.phones[2], href: `tel:${site.contact.phones[2]}` },
-              ].map(c => (
-                <div key={c.label} style={{
-                  display: "flex", justifyContent: "space-between", alignItems: "baseline",
-                  padding: "14px 0", borderBottom: "1px solid rgba(255,240,214,0.06)",
-                }}>
-                  <span style={{
-                    fontFamily: "'Syne',sans-serif", fontSize: "9.5px", fontWeight: 700,
-                    letterSpacing: "0.2em", textTransform: "uppercase",
-                    color: "rgba(255,240,214,0.28)",
-                  }}>{c.label}</span>
-                  <a href={c.href} style={{
-                    fontFamily: "'DM Sans',sans-serif", fontSize: "14px",
-                    color: c.href !== "#" ? JADE : "rgba(255,240,214,0.55)",
-                    textDecoration: "none",
-                  }}>{c.value}</a>
-                </div>
-              ))}
-            </div>
-
-            {/* Socials + Ecosystem */}
-            <div>
-              <div style={{
-                fontFamily: "'Syne',sans-serif", fontSize: "10px", fontWeight: 700,
-                letterSpacing: "0.3em", textTransform: "uppercase", color: EMBER,
-                display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px",
-              }}>
-                <span style={{ display: "inline-block", width: "24px", height: "1px", background: EMBER }} />
-                Follow the Label
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "48px" }}>
-                {[
-                  { name: "Instagram", href: "https://www.instagram.com/taradomemusik_/" },
-                  { name: "YouTube",   href: "https://www.youtube.com/@irhayofficial" },
-                  { name: "X / Twitter", href: "https://x.com/irhayofficial" },
-                  { name: "Spotify",   href: "https://open.spotify.com/artist/6xS2lgAe7MInvSPrs97rGP" },
-                  { name: "AudioMack", href: "https://audiomack.com/irhayofficial" },
-                  { name: "Boomplay",  href: "https://www.boomplay.com/artists/56248576" },
-                ].map(s => (
-                  <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer"
-                    style={{
-                      border: `1px solid ${EMBER}30`, color: EMBER, padding: "8px 16px",
-                      fontFamily: "'Syne',sans-serif", fontSize: "9px", fontWeight: 700,
-                      letterSpacing: "0.14em", textTransform: "uppercase", textDecoration: "none",
-                      transition: "background 0.2s",
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = `${EMBER}14`)}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                  >{s.name} â†—</a>
-                ))}
-              </div>
-
-              {/* Ecosystem */}
-              <div style={{
-                fontFamily: "'Syne',sans-serif", fontSize: "10px", fontWeight: 700,
-                letterSpacing: "0.3em", textTransform: "uppercase",
-                color: "rgba(255,240,214,0.2)", marginBottom: "16px",
-              }}>Part of TÃ¡raDome Entertainment Group</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                {site.ecosystem.map(e => (
-                  <a key={e.name} href={e.href}
-                    target={e.href.startsWith("http") ? "_blank" : undefined}
-                    rel="noopener noreferrer"
-                    style={{
-                      display: "flex", justifyContent: "space-between", alignItems: "center",
-                      padding: "16px 20px",
-                      background: e.active ? "rgba(212,132,76,0.08)" : "#10101a",
-                      borderLeft: `2px solid ${e.active ? EMBER : "transparent"}`,
-                      textDecoration: "none", transition: "background 0.2s",
-                    }}>
-                    <span style={{
-                      fontFamily: "'Syne',sans-serif", fontSize: "12px", fontWeight: 700,
-                      letterSpacing: "0.1em", textTransform: "uppercase",
-                      color: e.active ? EMBER : "rgba(255,240,214,0.4)",
-                    }}>{e.name}{e.active ? " â—" : ""}</span>
-                    {!e.active && <span style={{ color: "rgba(255,240,214,0.2)", fontSize: "12px" }}>â†—</span>}
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Submit CTA */}
-      <section style={{
-        background: "rgba(16,16,26,0.7)",
-        borderTop: "1px solid rgba(255,240,214,0.05)",
-        padding: "80px clamp(24px,5vw,80px)",
-        textAlign: "center",
-      }}>
-        <div style={{ maxWidth: "580px", margin: "0 auto" }}>
-          <h2 style={{
-            fontFamily: "'Fraunces',serif", fontStyle: "italic",
-            fontSize: "clamp(28px,4vw,48px)", fontWeight: 900, color: "#fff0d6",
-            letterSpacing: "-0.03em", lineHeight: 1.05, marginBottom: "16px",
-          }}>Ready to work together?</h2>
-          <p style={{
-            fontFamily: "'DM Sans',sans-serif", fontSize: "15px",
-            color: "rgba(255,240,214,0.4)", marginBottom: "32px",
-          }}>Submit your music for consideration or reach out directly.</p>
-          <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href="/studio" style={{
-              background: "#ff4d2d", color: "white", padding: "14px 32px",
-              fontFamily: "'Syne',sans-serif", fontSize: "11px", fontWeight: 700,
-              letterSpacing: "0.14em", textTransform: "uppercase", textDecoration: "none",
-            }}>Submit Music</Link>
-            <a href={`mailto:${site.contact.email}`} style={{
-              border: "1px solid rgba(255,240,214,0.2)", color: "#fff0d6",
-              padding: "14px 32px",
-              fontFamily: "'Syne',sans-serif", fontSize: "11px", fontWeight: 700,
-              letterSpacing: "0.14em", textTransform: "uppercase", textDecoration: "none",
-            }}>Email Us</a>
-          </div>
-        </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }
-

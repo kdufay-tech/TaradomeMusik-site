@@ -1,90 +1,100 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,400;1,9..144,700;1,9..144,800;1,9..144,900&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300;1,9..40,400&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: dark;
-  --font-display: 'Fraunces', serif;
-  --font-label:   'Syne', sans-serif;
-  --font-body:    'DM Sans', sans-serif;
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-ink-950 text-white font-body;
+  }
+
+  ::selection {
+    background: rgba(255, 106, 61, 0.25);
+    color: #fff;
+  }
+
+  /* Fix character encoding display */
+  * {
+    font-feature-settings: "liga" 1, "calt" 1;
+  }
 }
 
-html, body { height: 100%; }
+@layer components {
+  .grain-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+  }
 
-body {
-  @apply bg-ink-950 text-white antialiased;
-  font-family: var(--font-body);
+  .glass-nav {
+    backdrop-filter: blur(16px) saturate(1.4);
+    background: rgba(7, 7, 10, 0.82);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .nav-link {
+    @apply text-white/60 text-[13px] font-medium tracking-wide transition-colors duration-200;
+  }
+  .nav-link:hover {
+    @apply text-white;
+  }
+
+  .section-label {
+    @apply text-[11px] font-semibold tracking-[0.16em] uppercase font-body;
+  }
+
+  .section-heading {
+    @apply font-display text-white font-bold tracking-tight;
+    font-size: clamp(32px, 4vw, 48px);
+  }
+
+  .card-surface {
+    @apply bg-white/[0.02] border border-white/[0.06] rounded-xl transition-all duration-300;
+  }
+  .card-surface:hover {
+    @apply border-white/[0.12];
+  }
+
+  .brand-pill {
+    @apply inline-flex items-center gap-2 bg-white/[0.04] border border-white/[0.08]
+           rounded-full px-5 py-1.5 text-[12px] text-white/60 font-body
+           tracking-[0.14em] uppercase font-medium;
+  }
+
+  .artist-card {
+    @apply relative rounded-2xl overflow-hidden border border-white/[0.06]
+           transition-all duration-300;
+    aspect-ratio: 3/4;
+  }
+  .artist-card:hover {
+    @apply -translate-y-1;
+  }
+
+  .dsp-badge {
+    @apply text-[10px] font-body text-white/35 border border-white/[0.08]
+           px-2.5 py-0.5 rounded-full font-medium tracking-wide;
+  }
+
+  .ecosystem-link {
+    @apply font-body text-[12px] font-semibold no-underline px-3.5 py-1.5
+           rounded-md border transition-all duration-300;
+  }
 }
 
-::selection { background: rgba(255, 77, 45, 0.35); }
-
-/* ── Grain overlay ─────────────────────────────────── */
-.grain {
-  background-image: radial-gradient(rgba(255,255,255,.055) 1px, transparent 1px);
-  background-size: 14px 14px;
-  opacity: .22;
-  pointer-events: none;
+@layer utilities {
+  .text-gradient-warm {
+    background: linear-gradient(135deg, #ffe2ad, #ff6a3d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
-
-/* ── Afro-future ambient glow ──────────────────────── */
-.afroGlow {
-  background:
-    radial-gradient(900px circle at 20% 10%,  rgba(124,58,237,.32),  transparent 55%),
-    radial-gradient(700px circle at 80% 40%,  rgba(47,230,184,.18),  transparent 55%),
-    radial-gradient(700px circle at 55% 80%,  rgba(255,77,45,.22),   transparent 55%);
-}
-
-/* ── Typography helpers ────────────────────────────── */
-.font-display  { font-family: var(--font-display); }
-.font-label    { font-family: var(--font-label); }
-.font-body     { font-family: var(--font-body); }
-
-/* ── Section entrance ──────────────────────────────── */
-.reveal {
-  opacity: 0;
-  transform: translateY(36px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
-}
-.reveal.in-view {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ── Animations ────────────────────────────────────── */
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-@keyframes waveBar {
-  0%, 100% { transform: scaleY(0.2); }
-  50%       { transform: scaleY(1); }
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(32px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-12px); }
-}
-
-.animate-fadeUp {
-  animation: fadeUp 0.9s ease both;
-}
-.animate-float {
-  animation: float 5s ease-in-out infinite;
-}
-
-/* ── Scrollbar ─────────────────────────────────────── */
-::-webkit-scrollbar          { width: 3px; height: 3px; }
-::-webkit-scrollbar-track    { background: #07070a; }
-::-webkit-scrollbar-thumb    { background: rgba(255,240,214,.15); }
-
-/* ── Hide scrollbar for horizontal scroll tracks ───── */
-.scroll-hide::-webkit-scrollbar { display: none; }
-.scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }

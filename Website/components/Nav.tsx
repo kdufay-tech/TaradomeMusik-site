@@ -1,149 +1,98 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { site } from "@/data/site";
+import { useEffect, useState } from "react";
+import { Menu, X } from "lucide-react";
 
-const NAV_ITEMS = [
-  { href: "/artists",  label: "Artists"  },
-  { href: "/releases", label: "Releases" },
-  { href: "/spotlight",label: "Spotlight"},
-  { href: "/studio",   label: "Studio"   },
-  { href: "/about",    label: "About"    },
-  { href: "/contact",  label: "Contact"  },
+const NAV_LINKS = [
+  { label: "Artists", href: "/artists" },
+  { label: "Releases", href: "/releases" },
+  { label: "Spotlight", href: "/spotlight" },
+  { label: "Studio", href: "/studio" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
 ];
 
-function Wordmark() {
-  return (
-    <Link href="/" className="flex flex-col leading-none gap-0.5 no-underline">
-      <span
-        className="text-sand-100 tracking-tight"
-        style={{ fontFamily:"'Fraunces',serif", fontStyle:"italic", fontSize:"20px", fontWeight:800 }}
-      >
-        Táradome
-      </span>
-      <span
-        className="text-ember-400 tracking-widest uppercase"
-        style={{ fontFamily:"'Syne',sans-serif", fontSize:"8px", fontWeight:800, letterSpacing:"0.38em" }}
-      >
-        MUSIK
-      </span>
-    </Link>
-  );
-}
-
-export function Nav() {
+export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 56);
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
+    const h = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", h, { passive: true });
+    return () => window.removeEventListener("scroll", h);
   }, []);
 
   return (
-    <>
-      <header
-        className="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
-        style={{
-          height: "72px",
-          background: scrolled ? "rgba(11,11,18,0.92)" : "transparent",
-          backdropFilter: scrolled ? "blur(20px)" : "none",
-          borderBottom: scrolled ? "1px solid rgba(255,240,214,0.06)" : "1px solid transparent",
-        }}
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 px-6 h-16 flex items-center justify-between transition-all duration-300 ${
+        scrolled ? "glass-nav" : "border-b border-transparent"
+      }`}
+    >
+      {/* Logo */}
+      <Link href="/" className="flex items-center gap-1.5 no-underline">
+        <span className="font-display text-xl font-bold text-white tracking-tight">
+          Táradome
+        </span>
+        <span className="text-[10px] font-bold text-ember-400 tracking-[0.18em] uppercase mt-0.5">
+          MUSIK
+        </span>
+      </Link>
+
+      {/* Desktop links */}
+      <div className="hidden md:flex items-center gap-7">
+        {NAV_LINKS.map((l) => (
+          <Link key={l.label} href={l.href} className="nav-link no-underline">
+            {l.label}
+          </Link>
+        ))}
+        <a
+          href="https://taratechent.com"
+          target="_blank"
+          rel="noreferrer"
+          className="nav-link no-underline text-jade-400/70 hover:text-jade-400"
+        >
+          TáraDome ↗
+        </a>
+        <Link
+          href="/join"
+          className="bg-ember-400 text-white text-xs font-semibold px-4 py-1.5 rounded-md no-underline tracking-[0.06em] uppercase hover:bg-ember-500 transition-colors"
+        >
+          Join
+        </Link>
+      </div>
+
+      {/* Mobile toggle */}
+      <button
+        onClick={() => setMobileOpen(!mobileOpen)}
+        className="md:hidden text-white/70 hover:text-white transition-colors bg-transparent border-none cursor-pointer"
+        aria-label="Toggle menu"
       >
-        <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6 md:px-10">
-
-          <Wordmark />
-
-          {/* Desktop nav */}
-          <nav className="hidden items-center gap-1 md:flex">
-            {NAV_ITEMS.map((it) => (
-              <Link
-                key={it.href}
-                href={it.href}
-                className="px-3 py-2 text-white/55 hover:text-white transition-colors duration-200"
-                style={{ fontFamily:"'Syne',sans-serif", fontSize:"11.5px", fontWeight:700, letterSpacing:"0.13em", textTransform:"uppercase" }}
-              >
-                {it.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right actions */}
-          <div className="hidden items-center gap-3 md:flex">
-            {/* Ecosystem badge */}
-            <a
-              href="https://taratechent.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border border-jade-400/30 px-3 py-1.5 text-jade-400 hover:bg-jade-400/10 transition-colors"
-              style={{ fontFamily:"'Syne',sans-serif", fontSize:"10px", fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase" }}
-            >
-              TáraDome ↗
-            </a>
-
-            <Link
-              href="/join"
-              className="bg-ember-500 hover:bg-ember-400 px-5 py-2 text-white transition-colors"
-              style={{ fontFamily:"'Syne',sans-serif", fontSize:"11px", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}
-            >
-              Join
-            </Link>
-          </div>
-
-          {/* Mobile toggle */}
-          <button
-            className="flex md:hidden items-center justify-center w-10 h-10 border border-white/10 text-white/70"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle menu"
-          >
-            <span style={{ fontSize:"18px" }}>{menuOpen ? "✕" : "☰"}</span>
-          </button>
-        </div>
-      </header>
+        {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+      </button>
 
       {/* Mobile menu */}
-      {menuOpen && (
-        <div
-          className="fixed inset-0 z-40 flex flex-col pt-20 px-6 pb-8 bg-ink-950/98"
-          style={{ backdropFilter:"blur(20px)" }}
-        >
-          <nav className="flex flex-col gap-1 mt-4">
-            {NAV_ITEMS.map((it) => (
-              <Link
-                key={it.href}
-                href={it.href}
-                onClick={() => setMenuOpen(false)}
-                className="py-4 text-white/60 hover:text-white border-b border-white/06 transition-colors"
-                style={{ fontFamily:"'Syne',sans-serif", fontSize:"14px", fontWeight:700, letterSpacing:"0.15em", textTransform:"uppercase" }}
-              >
-                {it.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="mt-8 flex flex-col gap-3">
-            <a
-              href="https://taratechent.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-center border border-jade-400/30 py-3 text-jade-400"
-              style={{ fontFamily:"'Syne',sans-serif", fontSize:"11px", fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase" }}
-            >
-              TáraDome Ecosystem ↗
-            </a>
+      {mobileOpen && (
+        <div className="absolute top-16 left-0 right-0 bg-ink-900/98 border-b border-white/[0.06] p-6 flex flex-col gap-4 md:hidden backdrop-blur-xl">
+          {NAV_LINKS.map((l) => (
             <Link
-              href="/join"
-              onClick={() => setMenuOpen(false)}
-              className="text-center bg-ember-500 py-3 text-white"
-              style={{ fontFamily:"'Syne',sans-serif", fontSize:"11px", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase" }}
+              key={l.label}
+              href={l.href}
+              onClick={() => setMobileOpen(false)}
+              className="text-white/60 text-sm font-medium font-body no-underline hover:text-white transition-colors"
             >
-              Join the Inner Circle
+              {l.label}
             </Link>
-          </div>
+          ))}
+          <Link
+            href="/join"
+            onClick={() => setMobileOpen(false)}
+            className="bg-ember-400 text-white text-sm font-semibold px-4 py-2.5 rounded-lg no-underline text-center tracking-wide hover:bg-ember-500 transition-colors mt-2"
+          >
+            Join the Fan List
+          </Link>
         </div>
       )}
-    </>
+    </nav>
   );
 }
