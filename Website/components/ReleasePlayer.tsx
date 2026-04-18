@@ -36,18 +36,19 @@ export default function ReleasePlayer({
       style={{ "--glow": `${brandColor}30` } as React.CSSProperties}
     >
       {/* Cover art / Spotify embed toggle */}
-      <div className="aspect-square relative overflow-hidden">
+      <div className={playing ? "relative overflow-hidden" : "aspect-square relative overflow-hidden"}>
         {playing ? (
           /* Spotify embed — counts as a real play */
-          <div className="absolute inset-0 bg-black flex flex-col">
+          <div className="bg-black rounded-t-2xl overflow-hidden" style={{ height: spotifyType === "album" ? "380px" : "352px" }}>
             <iframe
-              src={`https://open.spotify.com/embed/${spotifyType}/${spotifyId}?utm_source=generator&theme=0`}
+              src={`https://open.spotify.com/embed/${spotifyType}/${spotifyId}?utm_source=generator&theme=0&autoplay=1`}
               width="100%"
               height="100%"
               frameBorder={0}
               allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-              className="rounded-t-2xl"
+              allowFullScreen
+              loading="eager"
+              style={{ borderRadius: "12px" }}
               title={`${title} by ${artistName}`}
             />
             <button
