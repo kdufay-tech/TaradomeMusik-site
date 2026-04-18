@@ -60,9 +60,11 @@ export const RELEASES = [
     presave: "https://onerpm.link/143394760138",
     coverImage: "/images/cover-easy-on-me.jpg",
     brandColor: "#D4844C",
+    spotifyId: "6ccSSfty1jgIa1vFWI8J56",
+    spotifyType: "track" as const,
     dsps: {
       spotify:
-        "https://open.spotify.com/artist/6xS2lgAe7MInvSPrs97rGP",
+        "https://open.spotify.com/track/6ccSSfty1jgIa1vFWI8J56",
       audiomack: "https://audiomack.com/irhayofficial",
       boomplay: "https://www.boomplay.com/artists/56248576",
     },
@@ -77,9 +79,11 @@ export const RELEASES = [
     presave: "",
     coverImage: "/images/cover-pandora.png",
     brandColor: "#E8772E",
+    spotifyId: "1YVgsQr6r5l9XVjjpaMqKj",
+    spotifyType: "track" as const,
     dsps: {
       spotify:
-        "https://open.spotify.com/artist/6xS2lgAe7MInvSPrs97rGP",
+        "https://open.spotify.com/track/1YVgsQr6r5l9XVjjpaMqKj",
       audiomack: "https://audiomack.com/irhayofficial",
       boomplay: "https://www.boomplay.com/artists/56248576",
     },
@@ -94,9 +98,11 @@ export const RELEASES = [
     presave: "",
     coverImage: "/images/cover-wings.jpg",
     brandColor: "#8D9A6A",
+    spotifyId: "7s7K7JurIIQL7HUXyQbSCj",
+    spotifyType: "track" as const,
     dsps: {
       spotify:
-        "https://open.spotify.com/artist/6xS2lgAe7MInvSPrs97rGP",
+        "https://open.spotify.com/track/7s7K7JurIIQL7HUXyQbSCj",
       audiomack: "https://audiomack.com/irhayofficial",
       boomplay: "https://www.boomplay.com/artists/56248576",
     },
@@ -111,9 +117,11 @@ export const RELEASES = [
     presave: "",
     coverImage: "/images/cover-surface.jpg",
     brandColor: "#5C3D2E",
+    spotifyId: "1cLm6gyFxuD4GadSBLv5gN",
+    spotifyType: "album" as const,
     dsps: {
       spotify:
-        "https://open.spotify.com/artist/6xS2lgAe7MInvSPrs97rGP",
+        "https://open.spotify.com/album/1cLm6gyFxuD4GadSBLv5gN",
       audiomack: "https://audiomack.com/irhayofficial",
     },
   },

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ARTISTS, RELEASES, ECOSYSTEM, SITE } from "@/lib/data";
+import ReleasePlayer from "@/components/ReleasePlayer";
 
 /* ════════════════════════════════════════════════════════════
    HERO
@@ -163,62 +164,19 @@ function ArtistsSection() {
    ════════════════════════════════════════════════════════════ */
 function ReleaseCard({ release, index }: { release: typeof RELEASES[number]; index: number }) {
   return (
-    <div
-      className="release-cover-card"
-      style={{ animationDelay: `${index * 0.15}s`, "--glow": `${release.brandColor}30` } as React.CSSProperties}
-    >
-      {/* Actual cover art */}
-      <div className="aspect-square relative overflow-hidden">
-        <Image
-          src={release.coverImage}
-          alt={`${release.title} — ${release.artistName}`}
-          fill
-          className="object-cover transition-transform duration-700 hover:scale-105"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        />
-        {/* Glass edge overlay */}
-        <div className="absolute inset-0 pointer-events-none z-10"
-          style={{
-            background: "linear-gradient(to top, rgba(7,7,10,0.7) 0%, transparent 50%)",
-          }}
-        />
-        <span className="absolute top-3 left-3 z-20 bg-black/60 backdrop-blur-sm text-white/70 text-[10px] font-semibold font-body px-3 py-1 rounded-full tracking-wide uppercase border border-white/[0.08]">
-          {release.type}
-        </span>
-      </div>
-
-      <div className="p-5">
-        <h4 className="font-body text-base font-semibold text-white mb-1">
-          {release.title}
-        </h4>
-        <p className="font-body text-[13px] text-white/40 mb-0.5">{release.artistName}</p>
-        <p className="font-body text-[11px] text-white/25">{release.date}</p>
-
-        {/* DSP badges */}
-        <div className="flex gap-2 mt-3.5 flex-wrap">
-          {Object.keys(release.dsps).map((dsp) => (
-            <a
-              key={dsp}
-              href={(release.dsps as Record<string, string>)[dsp]}
-              target="_blank"
-              rel="noreferrer"
-              className="dsp-badge no-underline hover:text-white/60 hover:border-white/20 transition-colors"
-            >
-              {dsp.charAt(0).toUpperCase() + dsp.slice(1)}
-            </a>
-          ))}
-          {release.presave && (
-            <a
-              href={release.presave}
-              target="_blank"
-              rel="noreferrer"
-              className="text-[10px] font-body text-ember-400 border border-ember-400/30 px-2.5 py-0.5 rounded-full font-semibold tracking-wide no-underline hover:border-ember-400/60 transition-colors"
-            >
-              Pre-Save
-            </a>
-          )}
-        </div>
-      </div>
+    <div style={{ animationDelay: `${index * 0.15}s` }}>
+      <ReleasePlayer
+        title={release.title}
+        artistName={release.artistName}
+        date={release.date}
+        type={release.type}
+        coverImage={release.coverImage}
+        brandColor={release.brandColor}
+        spotifyId={release.spotifyId}
+        spotifyType={release.spotifyType}
+        presave={release.presave}
+        dsps={release.dsps as Record<string, string>}
+      />
     </div>
   );
 }
