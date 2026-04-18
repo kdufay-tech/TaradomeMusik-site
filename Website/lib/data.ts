@@ -132,8 +132,8 @@ export const ECOSYSTEM = [
   },
   {
     name: "TaradomeFilms",
-    url: "https://taradomefilms.com",
-    active: false,
+    url: "/films",
+    active: true,
     color: "#7c3aed",
     logo: "/images/logo-taradomefilms.png",
   },

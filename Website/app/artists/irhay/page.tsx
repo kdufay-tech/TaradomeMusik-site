@@ -89,29 +89,35 @@ export default function IRhayPage() {
           <span className="section-label" style={{ color: artist.brandColor }}>Discography</span>
           <h2 className="section-heading mt-2 mb-8">Releases</h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {artistReleases.map((r) => (
-              <div key={r.title} className="card-surface p-5">
-                <div className="aspect-square rounded-lg mb-4 relative overflow-hidden flex items-center justify-center"
-                  style={{ background: `linear-gradient(135deg, #1a1a27, ${r.brandColor}30)` }}
-                >
-                  <span className="font-display text-4xl font-bold" style={{ color: r.brandColor, opacity: 0.6 }}>
-                    {r.title.charAt(0)}
-                  </span>
-                  <span className="absolute top-2.5 left-2.5 bg-black/50 text-white/60 text-[10px] font-semibold font-body px-2.5 py-0.5 rounded-full tracking-wide uppercase">
+              <div key={r.title} className="release-cover-card" style={{ "--glow": `${r.brandColor}30` } as React.CSSProperties}>
+                <div className="aspect-square relative overflow-hidden">
+                  <Image
+                    src={r.coverImage}
+                    alt={`${r.title} — ${r.artistName}`}
+                    fill
+                    className="object-cover transition-transform duration-700 hover:scale-105"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  />
+                  <div className="absolute inset-0 pointer-events-none z-10"
+                    style={{ background: "linear-gradient(to top, rgba(7,7,10,0.7) 0%, transparent 50%)" }} />
+                  <span className="absolute top-3 left-3 z-20 bg-black/60 backdrop-blur-sm text-white/70 text-[10px] font-semibold font-body px-3 py-1 rounded-full tracking-wide uppercase border border-white/[0.08]">
                     {r.type}
                   </span>
                 </div>
-                <h4 className="font-body text-base font-semibold text-white mb-1">{r.title}</h4>
-                <p className="font-body text-[11px] text-white/25">{r.date}</p>
-                <div className="flex gap-2 mt-3 flex-wrap">
-                  {Object.keys(r.dsps).map((dsp) => (
-                    <a key={dsp} href={(r.dsps as Record<string, string>)[dsp]} target="_blank" rel="noreferrer"
-                      className="dsp-badge no-underline hover:text-white/60 transition-colors capitalize"
-                    >
-                      {dsp}
-                    </a>
-                  ))}
+                <div className="p-5">
+                  <h4 className="font-body text-base font-semibold text-white mb-1">{r.title}</h4>
+                  <p className="font-body text-[11px] text-white/25">{r.date}</p>
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {Object.keys(r.dsps).map((dsp) => (
+                      <a key={dsp} href={(r.dsps as Record<string, string>)[dsp]} target="_blank" rel="noreferrer"
+                        className="dsp-badge no-underline hover:text-white/60 transition-colors capitalize"
+                      >
+                        {dsp}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}

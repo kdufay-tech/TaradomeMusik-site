@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TaradomeFilms — Coming Soon</title>
+  <meta name="description" content="TaradomeFilms — The cinematic arm of TáraDome Entertainment Group. African stories, global screens. Coming soon." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --ink-950: #07070a;
+      --ink-900: #0b0b12;
+      --ink-800: #10101a;
+      --violet: #7c3aed;
+      --violet-dim: rgba(124, 58, 237, 0.15);
+      --sand-200: #ffe2ad;
+      --ember-400: #ff6a3d;
+      --jade-400: #2fe6b8;
+    }
+    
+    html { -webkit-font-smoothing: antialiased; }
+    
+    body {
+      background: var(--ink-950);
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Ambient glow */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.06) 0%, transparent 70%);
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    
+    body::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    
+    .container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 32px;
+      max-width: 560px;
+    }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 100px;
+      padding: 6px 20px;
+      margin-bottom: 32px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    
+    .badge .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--violet);
+      box-shadow: 0 0 10px var(--violet);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.85); }
+    }
+    
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+    
+    h1 .gradient {
+      background: linear-gradient(135deg, var(--sand-200), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .tagline {
+      font-size: clamp(15px, 2vw, 18px);
+      color: rgba(255,255,255,0.4);
+      line-height: 1.7;
+      margin-bottom: 40px;
+    }
+    
+    .film-strip {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin-bottom: 40px;
+    }
+    
+    .film-strip span {
+      width: 40px; height: 3px;
+      border-radius: 2px;
+      background: var(--violet);
+      opacity: 0.3;
+    }
+    .film-strip span:nth-child(2) { opacity: 0.6; }
+    .film-strip span:nth-child(3) { opacity: 1; }
+    .film-strip span:nth-child(4) { opacity: 0.6; }
+    .film-strip span:nth-child(5) { opacity: 0.3; }
+    
+    .notify-form {
+      display: flex;
+      gap: 12px;
+      max-width: 400px;
+      margin: 0 auto 16px;
+    }
+    
+    .notify-form input {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-family: 'Outfit', sans-serif;
+      color: #fff;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .notify-form input::placeholder { color: rgba(255,255,255,0.2); }
+    .notify-form input:focus { border-color: rgba(124, 58, 237, 0.4); }
+    
+    .notify-form button {
+      background: var(--violet);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: background 0.3s;
+      white-space: nowrap;
+    }
+    .notify-form button:hover { background: #6d28d9; }
+    
+    .hint {
+      font-size: 11px;
+      color: rgba(255,255,255,0.15);
+      margin-bottom: 48px;
+    }
+    
+    /* Ecosystem bar */
+    .ecosystem {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .ecosystem .label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    
+    .ecosystem a {
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 5px 14px;
+      border-radius: 6px;
+      border: 1px solid;
+      transition: all 0.3s;
+    }
+    
+    .eco-musik { color: var(--ember-400); border-color: rgba(255,106,61,0.2); }
+    .eco-musik:hover { border-color: rgba(255,106,61,0.5); }
+    
+    .eco-films { color: var(--violet); border-color: rgba(124,58,237,0.3); }
+    
+    .eco-tech { color: var(--jade-400); border-color: rgba(47,230,184,0.2); }
+    .eco-tech:hover { border-color: rgba(47,230,184,0.5); }
+    
+    .copyright {
+      position: absolute;
+      bottom: 24px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.12);
+    }
+    
+    /* Responsive */
+    @media (max-width: 480px) {
+      .notify-form { flex-direction: column; }
+      .ecosystem { flex-direction: column; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="badge">
+      <span class="dot"></span>
+      TáraDome Entertainment Group
+    </div>
+    
+    <h1>
+      Taradome<span class="gradient">Films.</span>
+    </h1>
+    
+    <div class="film-strip">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    
+    <p class="tagline">
+      African stories. Global screens.<br />
+      The cinematic arm of TáraDome is in development.
+    </p>
+    
+    <form class="notify-form" onsubmit="event.preventDefault(); this.querySelector('button').textContent='Noted ✓'; this.querySelector('input').disabled=true;">
+      <input type="email" placeholder="Get notified at launch" required />
+      <button type="submit">Notify Me</button>
+    </form>
+    <p class="hint">We&rsquo;ll only email you once — when we launch.</p>
+    
+    <div class="ecosystem">
+      <span class="label">Explore the group</span>
+      <a href="https://taradomemusik.com" class="eco-musik">TáradomeMusik ↗</a>
+      <span class="eco-films" style="cursor:default;">TaradomeFilms</span>
+      <a href="https://taratechent.com" class="eco-tech">TaraTech ↗</a>
+    </div>
+  </div>
+  
+  <div class="copyright">
+    © 2026 TáraDome Entertainment Group
+  </div>
+</body>
+</html>
