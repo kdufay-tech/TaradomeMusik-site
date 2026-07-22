@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { SITE, ECOSYSTEM } from "@/lib/data";
+import { SITE, ECOSYSTEM } from "../../lib/data";
 
 export default function AboutPage() {
   return (

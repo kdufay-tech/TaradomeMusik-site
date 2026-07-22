@@ -1,0 +1,212 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import ReleasePlayer from "../../components/ReleasePlayer";
+import { fetchArtist, fetchPublishedSlugs } from "../../lib/teos";
+
+const SITE = "https://taradomemusik.com";
+
+/* Static export: only pre-rendered (published) slugs exist; anything else 404s. */
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+  const slugs = await fetchPublishedSlugs();
+  return slugs.map((artist) => ({ artist }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { artist: string };
+}): Promise<Metadata> {
+  const a = await fetchArtist(params.artist);
+  if (!a) return { title: "Artist — TáradomeMusik" };
+
+  const url = `${SITE}/${a.slug}`;
+  const title = `${a.name} — TáradomeMusik`;
+  const description =
+    a.shortBio || a.tagline || `${a.name} on TáradomeMusik.`;
+  const image = a.heroImage || a.profileImage || undefined;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "profile",
+      url,
+      title,
+      description,
+      siteName: "TáradomeMusik",
+      images: image ? [{ url: image }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
+}
+
+export default async function ArtistPage({
+  params,
+}: {
+  params: { artist: string };
+}) {
+  const a = await fetchArtist(params.artist);
+  if (!a) notFound();
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "MusicGroup",
+    name: a.name,
+    url: `${SITE}/${a.slug}`,
+    genre: a.genre || undefined,
+    description: a.shortBio || a.tagline || undefined,
+    image: a.heroImage || a.profileImage || undefined,
+    sameAs: Object.values(a.socials).filter(Boolean),
+  };
+
+  return (
+    <div className="min-h-screen bg-ink-950">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      {/* Hero */}
+      <section className="relative h-[70vh] min-h-[500px]">
+        {a.heroImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={a.heroImage}
+            alt={a.name}
+            className="absolute inset-0 h-full w-full object-cover object-top"
+          />
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{ background: a.brandGradient }}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/50 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 z-10">
+          <div className="max-w-6xl mx-auto">
+            {a.tagline ? (
+              <div className="flex items-center gap-2 mb-3">
+                <span
+                  className="w-[3px] h-5 rounded-sm"
+                  style={{ background: a.brandColor }}
+                />
+                <span className="text-white/50 text-xs font-body tracking-[0.1em] uppercase">
+                  {a.tagline}
+                </span>
+              </div>
+            ) : null}
+            <h1
+              className="font-display text-white font-bold mb-2"
+              style={{ fontSize: "clamp(48px, 8vw, 80px)" }}
+            >
+              {a.name}
+            </h1>
+            {a.subGenre ? (
+              <p className="font-body text-lg text-white/50">{a.subGenre}</p>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      {/* Bio */}
+      <section className="py-16 px-6 border-t border-white/[0.04]">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div>
+            <span className="section-label" style={{ color: a.brandColor }}>
+              About
+            </span>
+            <h2 className="section-heading mt-2 mb-6">{a.name}</h2>
+            {(a.longBio || a.shortBio)
+              .split(/\n{2,}/)
+              .filter(Boolean)
+              .map((para, i) => (
+                <p
+                  key={i}
+                  className="font-body text-white/45 leading-relaxed mb-4"
+                >
+                  {para}
+                </p>
+              ))}
+
+            {Object.keys(a.socials).length ? (
+              <div className="flex gap-3 flex-wrap mt-6">
+                {Object.entries(a.socials).map(([platform, url]) => (
+                  <a
+                    key={platform}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="dsp-badge no-underline hover:text-white/60 hover:border-white/20 transition-colors capitalize"
+                  >
+                    {platform}
+                  </a>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {a.profileImage ? (
+            <div className="relative aspect-square rounded-2xl overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={a.profileImage}
+                alt={`${a.name} profile`}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      {/* Releases */}
+      {a.releases.length ? (
+        <section className="py-16 px-6 bg-ink-900 border-t border-white/[0.04]">
+          <div className="max-w-6xl mx-auto">
+            <span className="section-label" style={{ color: a.brandColor }}>
+              Discography
+            </span>
+            <h2 className="section-heading mt-2 mb-8">Releases</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {a.releases.map((r) => (
+                <ReleasePlayer
+                  key={r.title}
+                  title={r.title}
+                  artistName={a.name}
+                  date={r.date}
+                  type={r.type}
+                  coverImage={r.coverImage}
+                  brandColor={r.brandColor}
+                  spotifyId={r.spotifyId}
+                  spotifyType={r.spotifyType}
+                  presave={r.presave}
+                  dsps={r.dsps}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* Back link */}
+      <div className="py-8 px-6 border-t border-white/[0.04]">
+        <div className="max-w-6xl mx-auto">
+          <Link
+            href="/artists"
+            className="font-body text-sm text-white/30 no-underline hover:text-white/60 transition-colors"
+          >
+            ← Back to Artists
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

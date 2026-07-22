@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ARTISTS, RELEASES } from "@/lib/data";
-import ReleasePlayer from "@/components/ReleasePlayer";
+import { ARTISTS, RELEASES } from "../../../lib/data";
+import ReleasePlayer from "../../../components/ReleasePlayer";
 
 const artist = ARTISTS[0]; // IRhay
 const artistReleases = RELEASES.filter((r) => r.artistSlug === "irhay");
