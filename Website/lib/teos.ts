@@ -52,6 +52,7 @@ type TeosArtistRaw = {
   website?: string;
   socials?: Array<{ platform: string; url: string }> | Record<string, string>;
   releases?: TeosRelease[];
+  gallery?: string[];
 };
 
 /* ─── Marketing view model (mirrors lib/data.ts shapes) ─── */
@@ -84,6 +85,8 @@ export type PublicArtist = {
   website: string;
   socials: Record<string, string>;
   releases: PublicRelease[];
+  gallery: string[];
+  tags: string[];
 };
 
 const FALLBACK_COLOR = "#ff6a3d";
@@ -184,6 +187,13 @@ function mapArtist(raw: TeosArtistRaw): PublicArtist {
     website: raw.website || "",
     socials: socialsToMap(raw.socials),
     releases,
+    gallery: (raw.gallery || []).filter(
+      (u) => typeof u === "string" && /^https?:\/\//.test(u),
+    ),
+    tags: (raw.music_tags || [])
+      .map((t) => String(t || "").trim())
+      .filter(Boolean)
+      .slice(0, 8),
   };
 }
 

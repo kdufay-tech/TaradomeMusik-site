@@ -6,6 +6,42 @@ import { fetchArtist, fetchPublishedSlugs } from "../../lib/teos";
 
 const SITE = "https://taradomemusik.com";
 
+const PLATFORM_LABEL: Record<string, string> = {
+  spotify: "Spotify",
+  applemusic: "Apple Music",
+  apple: "Apple Music",
+  audiomack: "Audiomack",
+  boomplay: "Boomplay",
+  youtube: "YouTube",
+  youtubemusic: "YouTube Music",
+  soundcloud: "SoundCloud",
+  deezer: "Deezer",
+  tidal: "Tidal",
+  instagram: "Instagram",
+  twitter: "X",
+  x: "X",
+  facebook: "Facebook",
+  tiktok: "TikTok",
+};
+
+function plabel(k: string): string {
+  return PLATFORM_LABEL[k] || k.charAt(0).toUpperCase() + k.slice(1);
+}
+
+// Preferred order for the hero "Listen" call-to-action.
+const LISTEN_ORDER = [
+  "spotify",
+  "applemusic",
+  "apple",
+  "audiomack",
+  "boomplay",
+  "youtubemusic",
+  "youtube",
+  "soundcloud",
+  "deezer",
+  "tidal",
+];
+
 /* Static export: only pre-rendered (published) slugs exist; anything else 404s. */
 export const dynamicParams = false;
 
@@ -56,6 +92,17 @@ export default async function ArtistPage({
 }) {
   const a = await fetchArtist(params.artist);
   if (!a) notFound();
+
+  // Primary "Listen" target for the hero CTA: first available streaming DSP.
+  const socialKeys = Object.keys(a.socials);
+  let listenKey =
+    LISTEN_ORDER.find((k) => a.socials[k]) ||
+    socialKeys.find((k) => !!a.socials[k]) ||
+    "";
+  const listenUrl = listenKey ? a.socials[listenKey] : a.website || "";
+  const listenLabel = listenKey
+    ? `Listen on ${plabel(listenKey)}`
+    : "Official Site";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -113,6 +160,20 @@ export default async function ArtistPage({
             {a.subGenre ? (
               <p className="font-body text-lg text-white/50">{a.subGenre}</p>
             ) : null}
+            {listenUrl ? (
+              <a
+                href={listenUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-full font-body text-sm font-semibold text-ink-950 no-underline transition-transform hover:scale-[1.03]"
+                style={{ background: a.brandColor }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <polygon points="5,3 19,12 5,21" />
+                </svg>
+                {listenLabel}
+              </a>
+            ) : null}
           </div>
         </div>
       </section>
@@ -137,17 +198,32 @@ export default async function ArtistPage({
                 </p>
               ))}
 
+            {a.genre || a.tags.length ? (
+              <div className="flex gap-2 flex-wrap mt-6">
+                {[a.genre, ...a.tags]
+                  .filter(Boolean)
+                  .map((tag, i) => (
+                    <span
+                      key={tag + i}
+                      className="font-body text-[11px] tracking-wide text-white/55 border border-white/10 rounded-full px-3 py-1 capitalize"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+              </div>
+            ) : null}
+
             {Object.keys(a.socials).length ? (
-              <div className="flex gap-3 flex-wrap mt-6">
+              <div className="flex gap-3 flex-wrap mt-5">
                 {Object.entries(a.socials).map(([platform, url]) => (
                   <a
                     key={platform}
                     href={url}
                     target="_blank"
                     rel="noreferrer"
-                    className="dsp-badge no-underline hover:text-white/60 hover:border-white/20 transition-colors capitalize"
+                    className="dsp-badge no-underline hover:text-white/60 hover:border-white/20 transition-colors"
                   >
-                    {platform}
+                    {plabel(platform)}
                   </a>
                 ))}
               </div>
@@ -190,6 +266,34 @@ export default async function ArtistPage({
                   presave={r.presave}
                   dsps={r.dsps}
                 />
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {/* Gallery */}
+      {a.gallery.length ? (
+        <section className="py-16 px-6 border-t border-white/[0.04]">
+          <div className="max-w-6xl mx-auto">
+            <span className="section-label" style={{ color: a.brandColor }}>
+              Gallery
+            </span>
+            <h2 className="section-heading mt-2 mb-8">Visuals</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {a.gallery.slice(0, 12).map((src, i) => (
+                <div
+                  key={src + i}
+                  className="relative aspect-square rounded-xl overflow-hidden"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={`${a.name} photo ${i + 1}`}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                  />
+                </div>
               ))}
             </div>
           </div>
