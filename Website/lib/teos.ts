@@ -202,9 +202,10 @@ function mapArtist(raw: TeosArtistRaw): PublicArtist {
 /** All published, non-reserved artist slugs (for generateStaticParams). */
 export async function fetchPublishedSlugs(): Promise<string[]> {
   try {
-    const res = await fetch(`${TEOS_API}/public/artists`, {
-      cache: "no-store",
-    });
+    // Static export: this runs at BUILD time. Do NOT use no-store — a dynamic
+    // fetch makes the route dynamically-rendered, which output:export silently
+    // drops from out/. Default (cached) fetch keeps the route exportable.
+    const res = await fetch(`${TEOS_API}/public/artists`);
     if (!res.ok) return [];
     const data = await res.json();
     const rows: Array<{ slug: string }> = data?.rows || data || [];
@@ -223,7 +224,6 @@ export async function fetchArtist(slug: string): Promise<PublicArtist | null> {
   try {
     const res = await fetch(
       `${TEOS_API}/public/artist/${encodeURIComponent(s)}`,
-      { cache: "no-store" },
     );
     if (!res.ok) return null;
     const raw: TeosArtistRaw = await res.json();
