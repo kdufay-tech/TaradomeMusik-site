@@ -87,9 +87,28 @@ export type PublicArtist = {
   releases: PublicRelease[];
   gallery: string[];
   tags: string[];
+  tiers: PublicTier[];
+};
+
+export type PublicPerk = { title: string; description: string; category: string };
+export type PublicTier = {
+  key: string;
+  short: string;
+  label: string;
+  color: string;
+  perks: PublicPerk[]; // cumulative: everything a fan at this tier unlocks
 };
 
 const FALLBACK_COLOR = "#ff6a3d";
+
+/* Membership tier metadata (mirrors the TEOS portal's fanTiers). Free is the
+ * baseline and has no perk card. */
+const TIER_META: Array<{ key: string; short: string; label: string; color: string }> = [
+  { key: "bronze", short: "Bronze", label: "Supporter", color: "#B07A3C" },
+  { key: "gold", short: "Gold", label: "The Oga's Pack", color: "#C8952A" },
+  { key: "platinum", short: "Platinum", label: "The Jora Council", color: "#8E9BB3" },
+  { key: "diamond", short: "Diamond", label: "Igwe's Council — Afrobeats Royalty", color: "#7C3AED" },
+];
 
 function socialsToMap(
   socials: TeosArtistRaw["socials"],
@@ -194,7 +213,36 @@ function mapArtist(raw: TeosArtistRaw): PublicArtist {
       .map((t) => String(t || "").trim())
       .filter(Boolean)
       .slice(0, 8),
+    tiers: [],
   };
+}
+
+/* Fetch tier perks and fold them into cumulative membership tiers.
+ * The API returns perks grouped by the tier that introduces them; here we make
+ * each tier card show everything a fan at that level unlocks (its own + lower). */
+async function fetchTiers(slug: string): Promise<PublicTier[]> {
+  try {
+    const res = await fetch(`${TEOS_API}/public/artist/${encodeURIComponent(slug)}/perks`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const byTier: Record<string, Array<{ title?: string; description?: string; category?: string }>> =
+      data?.byTier || {};
+    let running: PublicPerk[] = [];
+    const out: PublicTier[] = [];
+    for (const meta of TIER_META) {
+      const own = (byTier[meta.key] || []).map((p) => ({
+        title: String(p.title || ""),
+        description: String(p.description || ""),
+        category: String(p.category || ""),
+      }));
+      running = running.concat(own);
+      out.push({ ...meta, perks: running.slice() });
+    }
+    // Only surface tiers that actually have perks.
+    return out.filter((t) => t.perks.length > 0);
+  } catch {
+    return [];
+  }
 }
 
 /* ─── Public API ─── */
@@ -228,7 +276,9 @@ export async function fetchArtist(slug: string): Promise<PublicArtist | null> {
     if (!res.ok) return null;
     const raw: TeosArtistRaw = await res.json();
     if (!raw || !raw.slug) return null;
-    return mapArtist(raw);
+    const artist = mapArtist(raw);
+    artist.tiers = await fetchTiers(s);
+    return artist;
   } catch {
     return null;
   }

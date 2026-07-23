@@ -1,0 +1,5 @@
+﻿feat: membership tier perks section on public artist pages
+
+- teos.ts fetches /public/artist/:slug/perks at build time
+- cumulative tiers[] folded onto PublicArtist
+- [artist] page renders Membership tier cards (what each tier unlocks)

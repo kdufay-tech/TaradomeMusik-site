@@ -273,6 +273,63 @@ export default async function ArtistPage({
         </section>
       ) : null}
 
+      {/* Membership tiers — what each level unlocks */}
+      {a.tiers.length ? (
+        <section className="py-16 px-6 border-t border-white/[0.04]">
+          <div className="max-w-6xl mx-auto">
+            <span className="section-label" style={{ color: a.brandColor }}>
+              Membership
+            </span>
+            <h2 className="section-heading mt-2 mb-3">Join the inner circle</h2>
+            <p className="text-white/50 text-sm mb-8 max-w-2xl">
+              Each tier includes everything from the tiers below it. Become a fan
+              to start at Bronze, then climb.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {a.tiers.map((t) => (
+                <div
+                  key={t.key}
+                  className="rounded-2xl overflow-hidden border border-white/[0.07] bg-white/[0.02] flex flex-col"
+                >
+                  <div
+                    className="px-5 py-4"
+                    style={{
+                      borderTop: `3px solid ${t.color}`,
+                      background: `${t.color}14`,
+                    }}
+                  >
+                    <div className="text-white font-bold text-base">{t.short}</div>
+                    <div className="text-white/50 text-xs">{t.label}</div>
+                  </div>
+                  <ul className="px-5 py-4 flex flex-col gap-3 flex-1">
+                    {t.perks.map((p, i) => (
+                      <li key={i} className="flex gap-2.5 items-start">
+                        <span
+                          className="flex-shrink-0 mt-0.5 w-4 h-4 rounded-full text-white text-[10px] leading-4 text-center"
+                          style={{ background: t.color }}
+                        >
+                          ✓
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-white/90 text-[13px] font-semibold">
+                            {p.title}
+                          </div>
+                          {p.description ? (
+                            <div className="text-white/45 text-[11.5px] leading-snug">
+                              {p.description}
+                            </div>
+                          ) : null}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {/* Join the community */}
       <JoinCommunity slug={a.slug} artistName={a.name} brandColor={a.brandColor} />
 
