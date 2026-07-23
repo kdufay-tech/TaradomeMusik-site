@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReleasePlayer from "../../components/ReleasePlayer";
 import JoinCommunity from "../../components/JoinCommunity";
+import UnlockContent from "../../components/UnlockContent";
 import { fetchArtist, fetchPublishedSlugs } from "../../lib/teos";
 
 const SITE = "https://taradomemusik.com";
@@ -329,6 +330,9 @@ export default async function ArtistPage({
           </div>
         </section>
       ) : null}
+
+      {/* Members' vault — tier-gated exclusive content */}
+      {a.tiers.length ? <UnlockContent slug={a.slug} brandColor={a.brandColor} /> : null}
 
       {/* Join the community */}
       <JoinCommunity slug={a.slug} artistName={a.name} brandColor={a.brandColor} />
