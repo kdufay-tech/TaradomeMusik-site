@@ -1,1 +1,5 @@
-﻿feat: members vault - tier-gated exclusive content unlock on public artist page
+﻿feat: fan subscribe buttons + tier prices on public artist pages
+
+- teos.ts surfaces monthly tier price
+- UpgradeButton (config-gated) opens Stripe/Paystack checkout
+- tier cards show price + Subscribe CTA

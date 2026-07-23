@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import ReleasePlayer from "../../components/ReleasePlayer";
 import JoinCommunity from "../../components/JoinCommunity";
 import UnlockContent from "../../components/UnlockContent";
+import UpgradeButton from "../../components/UpgradeButton";
 import { fetchArtist, fetchPublishedSlugs } from "../../lib/teos";
 
 const SITE = "https://taradomemusik.com";
@@ -301,8 +302,13 @@ export default async function ArtistPage({
                   >
                     <div className="text-white font-bold text-base">{t.short}</div>
                     <div className="text-white/50 text-xs">{t.label}</div>
+                    {t.price ? (
+                      <div className="text-white font-body text-sm font-semibold mt-1.5">
+                        {t.price}
+                      </div>
+                    ) : null}
                   </div>
-                  <ul className="px-5 py-4 flex flex-col gap-3 flex-1">
+                  <ul className="px-5 pt-4 pb-2 flex flex-col gap-3 flex-1">
                     {t.perks.map((p, i) => (
                       <li key={i} className="flex gap-2.5 items-start">
                         <span
@@ -324,6 +330,9 @@ export default async function ArtistPage({
                       </li>
                     ))}
                   </ul>
+                  <div className="px-5 pb-4">
+                    <UpgradeButton slug={a.slug} tier={t.key} brandColor={a.brandColor} />
+                  </div>
                 </div>
               ))}
             </div>
