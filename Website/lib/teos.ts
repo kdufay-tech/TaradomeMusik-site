@@ -89,6 +89,16 @@ export type PublicArtist = {
   tags: string[];
   tiers: PublicTier[];
   merch: PublicMerchItem[];
+  giveaways: PublicGiveaway[];
+};
+
+export type PublicGiveaway = {
+  id: string;
+  title: string;
+  description: string;
+  prize: string;
+  image: string;
+  minTier: string;
 };
 
 export type PublicMerchItem = {
@@ -227,7 +237,28 @@ function mapArtist(raw: TeosArtistRaw): PublicArtist {
       .slice(0, 8),
     tiers: [],
     merch: [],
+    giveaways: [],
   };
+}
+
+/* Open giveaways for an artist. */
+async function fetchGiveaways(slug: string): Promise<PublicGiveaway[]> {
+  try {
+    const res = await fetch(`${TEOS_API}/public/artist/${encodeURIComponent(slug)}/giveaways`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const rows: any[] = data?.rows || [];
+    return rows.map((r) => ({
+      id: String(r.id),
+      title: String(r.title || ""),
+      description: String(r.description || ""),
+      prize: String(r.prize || ""),
+      image: typeof r.image_url === "string" ? r.image_url : "",
+      minTier: String(r.min_tier || "free"),
+    }));
+  } catch {
+    return [];
+  }
 }
 
 /* Published merch for an artist (physical + digital). */
@@ -321,6 +352,7 @@ export async function fetchArtist(slug: string): Promise<PublicArtist | null> {
     const artist = mapArtist(raw);
     artist.tiers = await fetchTiers(s);
     artist.merch = await fetchMerch(s);
+    artist.giveaways = await fetchGiveaways(s);
     return artist;
   } catch {
     return null;

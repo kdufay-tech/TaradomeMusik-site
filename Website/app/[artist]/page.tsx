@@ -7,6 +7,7 @@ import UnlockContent from "../../components/UnlockContent";
 import UpgradeButton from "../../components/UpgradeButton";
 import ArtistTabs from "../../components/ArtistTabs";
 import MerchStore from "../../components/MerchStore";
+import GiveawaysBoard from "../../components/GiveawaysBoard";
 import { fetchArtist, fetchPublishedSlugs } from "../../lib/teos";
 
 const SITE = "https://taradomemusik.com";
@@ -218,6 +219,10 @@ export default async function ArtistPage({
     <MerchStore slug={a.slug} brandColor={a.brandColor} items={a.merch} />
   ) : null;
 
+  const giveawayNode = a.giveaways.length ? (
+    <GiveawaysBoard slug={a.slug} brandColor={a.brandColor} items={a.giveaways} />
+  ) : null;
+
   const galleryNode = a.gallery.length ? (
     <section className="py-16 px-6">
       <div className="max-w-6xl mx-auto">
@@ -310,6 +315,7 @@ export default async function ArtistPage({
     membershipNode && { id: "membership", label: "Membership", content: membershipNode },
     vaultNode && { id: "vault", label: "Vault", content: vaultNode },
     merchNode && { id: "merch", label: "Merch", content: merchNode },
+    giveawayNode && { id: "giveaways", label: "Giveaways", content: giveawayNode },
     galleryNode && { id: "gallery", label: "Gallery", content: galleryNode },
     { id: "about", label: "About", content: aboutNode },
   ].filter(Boolean) as { id: string; label: string; content: React.ReactNode }[];

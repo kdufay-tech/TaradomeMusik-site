@@ -1,1 +1,1 @@
-﻿feat(merch): Merch tab + storefront on public artist pages (Buy via Stripe)
+﻿feat(giveaways): Giveaways tab + entry board on public artist pages
