@@ -90,6 +90,22 @@ export type PublicArtist = {
   tiers: PublicTier[];
   merch: PublicMerchItem[];
   giveaways: PublicGiveaway[];
+  events: PublicEvent[];
+};
+
+export type PublicEvent = {
+  id: string;
+  title: string;
+  description: string;
+  eventType: string;
+  startsAt: string;
+  location: string;
+  isVirtual: boolean;
+  minTier: string;
+  price: number;
+  priceLabel: string;
+  spotsLeft: number | null;
+  image: string;
 };
 
 export type PublicGiveaway = {
@@ -238,7 +254,38 @@ function mapArtist(raw: TeosArtistRaw): PublicArtist {
     tiers: [],
     merch: [],
     giveaways: [],
+    events: [],
   };
+}
+
+/* Upcoming events/workshops for an artist. */
+async function fetchEvents(slug: string): Promise<PublicEvent[]> {
+  try {
+    const res = await fetch(`${TEOS_API}/public/artist/${encodeURIComponent(slug)}/events`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const rows: any[] = data?.rows || [];
+    return rows.map((r) => {
+      const cur = r.currency || "USD";
+      const price = Number(r.price) || 0;
+      return {
+        id: String(r.id),
+        title: String(r.title || ""),
+        description: String(r.description || ""),
+        eventType: String(r.event_type || "event"),
+        startsAt: r.starts_at || "",
+        location: String(r.location || ""),
+        isVirtual: r.is_virtual !== false,
+        minTier: String(r.min_tier || "free"),
+        price,
+        priceLabel: price ? (cur === "USD" ? "$" : cur + " ") + price.toLocaleString() : "Free",
+        spotsLeft: r.spots_left == null ? null : Number(r.spots_left),
+        image: typeof r.image_url === "string" ? r.image_url : "",
+      };
+    });
+  } catch {
+    return [];
+  }
 }
 
 /* Open giveaways for an artist. */
@@ -353,6 +400,7 @@ export async function fetchArtist(slug: string): Promise<PublicArtist | null> {
     artist.tiers = await fetchTiers(s);
     artist.merch = await fetchMerch(s);
     artist.giveaways = await fetchGiveaways(s);
+    artist.events = await fetchEvents(s);
     return artist;
   } catch {
     return null;

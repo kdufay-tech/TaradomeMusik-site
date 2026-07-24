@@ -1,1 +1,1 @@
-﻿feat(giveaways): Giveaways tab + entry board on public artist pages
+﻿feat(events): Events tab + register/ticket board on public artist pages

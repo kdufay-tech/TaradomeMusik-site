@@ -8,6 +8,7 @@ import UpgradeButton from "../../components/UpgradeButton";
 import ArtistTabs from "../../components/ArtistTabs";
 import MerchStore from "../../components/MerchStore";
 import GiveawaysBoard from "../../components/GiveawaysBoard";
+import EventsBoard from "../../components/EventsBoard";
 import { fetchArtist, fetchPublishedSlugs } from "../../lib/teos";
 
 const SITE = "https://taradomemusik.com";
@@ -223,6 +224,10 @@ export default async function ArtistPage({
     <GiveawaysBoard slug={a.slug} brandColor={a.brandColor} items={a.giveaways} />
   ) : null;
 
+  const eventsNode = a.events.length ? (
+    <EventsBoard slug={a.slug} brandColor={a.brandColor} items={a.events} />
+  ) : null;
+
   const galleryNode = a.gallery.length ? (
     <section className="py-16 px-6">
       <div className="max-w-6xl mx-auto">
@@ -312,6 +317,7 @@ export default async function ArtistPage({
 
   const sections = [
     musicNode && { id: "music", label: "Music", content: musicNode },
+    eventsNode && { id: "events", label: "Events", content: eventsNode },
     membershipNode && { id: "membership", label: "Membership", content: membershipNode },
     vaultNode && { id: "vault", label: "Vault", content: vaultNode },
     merchNode && { id: "merch", label: "Merch", content: merchNode },
