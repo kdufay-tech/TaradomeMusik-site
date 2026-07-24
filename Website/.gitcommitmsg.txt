@@ -1,1 +1,1 @@
-﻿style(ux): bolder standout section nav under hero (public pages)
+﻿feat(merch): Merch tab + storefront on public artist pages (Buy via Stripe)

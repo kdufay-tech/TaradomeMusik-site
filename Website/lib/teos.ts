@@ -88,6 +88,17 @@ export type PublicArtist = {
   gallery: string[];
   tags: string[];
   tiers: PublicTier[];
+  merch: PublicMerchItem[];
+};
+
+export type PublicMerchItem = {
+  id: string;
+  name: string;
+  description: string;
+  priceLabel: string;
+  image: string;
+  category: string;
+  variants: string[];
 };
 
 export type PublicPerk = { title: string; description: string; category: string };
@@ -215,7 +226,33 @@ function mapArtist(raw: TeosArtistRaw): PublicArtist {
       .filter(Boolean)
       .slice(0, 8),
     tiers: [],
+    merch: [],
   };
+}
+
+/* Published merch for an artist (physical + digital). */
+async function fetchMerch(slug: string): Promise<PublicMerchItem[]> {
+  try {
+    const res = await fetch(`${TEOS_API}/public/artist/${encodeURIComponent(slug)}/merch`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const rows: any[] = data?.rows || [];
+    return rows.map((r) => {
+      const cur = r.currency || "USD";
+      const price = r.price == null ? "" : (cur === "USD" ? "$" : cur + " ") + Number(r.price).toLocaleString();
+      return {
+        id: String(r.id),
+        name: String(r.name || ""),
+        description: String(r.description || ""),
+        priceLabel: price,
+        image: typeof r.image_url === "string" ? r.image_url : "",
+        category: String(r.category || ""),
+        variants: Array.isArray(r.variants) ? r.variants.map((v: any) => String(v)) : [],
+      };
+    });
+  } catch {
+    return [];
+  }
 }
 
 /* Fetch tier perks and fold them into cumulative membership tiers.
@@ -283,6 +320,7 @@ export async function fetchArtist(slug: string): Promise<PublicArtist | null> {
     if (!raw || !raw.slug) return null;
     const artist = mapArtist(raw);
     artist.tiers = await fetchTiers(s);
+    artist.merch = await fetchMerch(s);
     return artist;
   } catch {
     return null;
