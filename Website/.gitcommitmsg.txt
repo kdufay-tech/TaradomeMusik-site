@@ -1,1 +1,1 @@
-﻿feat(events): Events tab + register/ticket board on public artist pages
+﻿feat(chat): realtime Community tab on public artist pages (Supabase Realtime)
