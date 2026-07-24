@@ -1,1 +1,1 @@
-﻿feat(chat): realtime Community tab on public artist pages (Supabase Realtime)
+﻿feat(chat): drag-and-drop image upload in public community chat
