@@ -5,6 +5,7 @@ import ReleasePlayer from "../../components/ReleasePlayer";
 import JoinCommunity from "../../components/JoinCommunity";
 import UnlockContent from "../../components/UnlockContent";
 import UpgradeButton from "../../components/UpgradeButton";
+import ArtistTabs from "../../components/ArtistTabs";
 import { fetchArtist, fetchPublishedSlugs } from "../../lib/teos";
 
 const SITE = "https://taradomemusik.com";
@@ -63,8 +64,7 @@ export async function generateMetadata({
 
   const url = `${SITE}/${a.slug}`;
   const title = `${a.name} — TáradomeMusik`;
-  const description =
-    a.shortBio || a.tagline || `${a.name} on TáradomeMusik.`;
+  const description = a.shortBio || a.tagline || `${a.name} on TáradomeMusik.`;
   const image = a.heroImage || a.profileImage || undefined;
 
   return {
@@ -98,14 +98,12 @@ export default async function ArtistPage({
 
   // Primary "Listen" target for the hero CTA: first available streaming DSP.
   const socialKeys = Object.keys(a.socials);
-  let listenKey =
+  const listenKey =
     LISTEN_ORDER.find((k) => a.socials[k]) ||
     socialKeys.find((k) => !!a.socials[k]) ||
     "";
   const listenUrl = listenKey ? a.socials[listenKey] : a.website || "";
-  const listenLabel = listenKey
-    ? `Listen on ${plabel(listenKey)}`
-    : "Official Site";
+  const listenLabel = listenKey ? `Listen on ${plabel(listenKey)}` : "Official Site";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -117,6 +115,198 @@ export default async function ArtistPage({
     image: a.heroImage || a.profileImage || undefined,
     sameAs: Object.values(a.socials).filter(Boolean),
   };
+
+  // ─── Tab sections (only the ones with content are shown) ───
+  const musicNode = a.releases.length ? (
+    <section className="py-16 px-6 bg-ink-900">
+      <div className="max-w-6xl mx-auto">
+        <span className="section-label" style={{ color: a.brandColor }}>
+          Discography
+        </span>
+        <h2 className="section-heading mt-2 mb-8">Releases</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {a.releases.map((r) => (
+            <ReleasePlayer
+              key={r.title}
+              title={r.title}
+              artistName={a.name}
+              date={r.date}
+              type={r.type}
+              coverImage={r.coverImage}
+              brandColor={r.brandColor}
+              spotifyId={r.spotifyId}
+              spotifyType={r.spotifyType}
+              presave={r.presave}
+              dsps={r.dsps}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  ) : null;
+
+  const membershipNode = a.tiers.length ? (
+    <div>
+      <section className="py-16 px-6">
+        <div className="max-w-6xl mx-auto">
+          <span className="section-label" style={{ color: a.brandColor }}>
+            Membership
+          </span>
+          <h2 className="section-heading mt-2 mb-3">Join the inner circle</h2>
+          <p className="text-white/50 text-sm mb-8 max-w-2xl">
+            Each tier includes everything from the tiers below it. Become a fan to
+            start at Bronze, then climb.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {a.tiers.map((t) => (
+              <div
+                key={t.key}
+                className="rounded-2xl overflow-hidden border border-white/[0.07] bg-white/[0.02] flex flex-col"
+              >
+                <div
+                  className="px-5 py-4"
+                  style={{ borderTop: `3px solid ${t.color}`, background: `${t.color}14` }}
+                >
+                  <div className="text-white font-bold text-base">{t.short}</div>
+                  <div className="text-white/50 text-xs">{t.label}</div>
+                  {t.price ? (
+                    <div className="text-white font-body text-sm font-semibold mt-1.5">
+                      {t.price}
+                    </div>
+                  ) : null}
+                </div>
+                <ul className="px-5 pt-4 pb-2 flex flex-col gap-3 flex-1">
+                  {t.perks.map((p, i) => (
+                    <li key={i} className="flex gap-2.5 items-start">
+                      <span
+                        className="flex-shrink-0 mt-0.5 w-4 h-4 rounded-full text-white text-[10px] leading-4 text-center"
+                        style={{ background: t.color }}
+                      >
+                        ✓
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-white/90 text-[13px] font-semibold">
+                          {p.title}
+                        </div>
+                        {p.description ? (
+                          <div className="text-white/45 text-[11.5px] leading-snug">
+                            {p.description}
+                          </div>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div className="px-5 pb-4">
+                  <UpgradeButton slug={a.slug} tier={t.key} brandColor={a.brandColor} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <JoinCommunity slug={a.slug} artistName={a.name} brandColor={a.brandColor} />
+    </div>
+  ) : null;
+
+  const vaultNode = a.tiers.length ? (
+    <UnlockContent slug={a.slug} brandColor={a.brandColor} />
+  ) : null;
+
+  const galleryNode = a.gallery.length ? (
+    <section className="py-16 px-6">
+      <div className="max-w-6xl mx-auto">
+        <span className="section-label" style={{ color: a.brandColor }}>
+          Gallery
+        </span>
+        <h2 className="section-heading mt-2 mb-8">Visuals</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {a.gallery.slice(0, 12).map((src, i) => (
+            <div key={src + i} className="relative aspect-square rounded-xl overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt={`${a.name} photo ${i + 1}`}
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  ) : null;
+
+  const aboutNode = (
+    <div>
+      <section className="py-16 px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div>
+            <span className="section-label" style={{ color: a.brandColor }}>
+              About
+            </span>
+            <h2 className="section-heading mt-2 mb-6">{a.name}</h2>
+            {(a.longBio || a.shortBio)
+              .split(/\n{2,}/)
+              .filter(Boolean)
+              .map((para, i) => (
+                <p key={i} className="font-body text-white/45 leading-relaxed mb-4">
+                  {para}
+                </p>
+              ))}
+            {a.genre || a.tags.length ? (
+              <div className="flex gap-2 flex-wrap mt-6">
+                {[a.genre, ...a.tags].filter(Boolean).map((tag, i) => (
+                  <span
+                    key={tag + i}
+                    className="font-body text-[11px] tracking-wide text-white/55 border border-white/10 rounded-full px-3 py-1 capitalize"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {Object.keys(a.socials).length ? (
+              <div className="flex gap-3 flex-wrap mt-5">
+                {Object.entries(a.socials).map(([platform, url]) => (
+                  <a
+                    key={platform}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="dsp-badge no-underline hover:text-white/60 hover:border-white/20 transition-colors"
+                  >
+                    {plabel(platform)}
+                  </a>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          {a.profileImage ? (
+            <div className="relative aspect-square rounded-2xl overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={a.profileImage}
+                alt={`${a.name} profile`}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            </div>
+          ) : null}
+        </div>
+      </section>
+      {!a.tiers.length ? (
+        <JoinCommunity slug={a.slug} artistName={a.name} brandColor={a.brandColor} />
+      ) : null}
+    </div>
+  );
+
+  const sections = [
+    musicNode && { id: "music", label: "Music", content: musicNode },
+    membershipNode && { id: "membership", label: "Membership", content: membershipNode },
+    vaultNode && { id: "vault", label: "Vault", content: vaultNode },
+    galleryNode && { id: "gallery", label: "Gallery", content: galleryNode },
+    { id: "about", label: "About", content: aboutNode },
+  ].filter(Boolean) as { id: string; label: string; content: React.ReactNode }[];
 
   return (
     <div className="min-h-screen bg-ink-950">
@@ -135,10 +325,7 @@ export default async function ArtistPage({
             className="absolute inset-0 h-full w-full object-cover object-top"
           />
         ) : (
-          <div
-            className="absolute inset-0"
-            style={{ background: a.brandGradient }}
-          />
+          <div className="absolute inset-0" style={{ background: a.brandGradient }} />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 z-10">
@@ -181,198 +368,8 @@ export default async function ArtistPage({
         </div>
       </section>
 
-      {/* Bio */}
-      <section className="py-16 px-6 border-t border-white/[0.04]">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div>
-            <span className="section-label" style={{ color: a.brandColor }}>
-              About
-            </span>
-            <h2 className="section-heading mt-2 mb-6">{a.name}</h2>
-            {(a.longBio || a.shortBio)
-              .split(/\n{2,}/)
-              .filter(Boolean)
-              .map((para, i) => (
-                <p
-                  key={i}
-                  className="font-body text-white/45 leading-relaxed mb-4"
-                >
-                  {para}
-                </p>
-              ))}
-
-            {a.genre || a.tags.length ? (
-              <div className="flex gap-2 flex-wrap mt-6">
-                {[a.genre, ...a.tags]
-                  .filter(Boolean)
-                  .map((tag, i) => (
-                    <span
-                      key={tag + i}
-                      className="font-body text-[11px] tracking-wide text-white/55 border border-white/10 rounded-full px-3 py-1 capitalize"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-              </div>
-            ) : null}
-
-            {Object.keys(a.socials).length ? (
-              <div className="flex gap-3 flex-wrap mt-5">
-                {Object.entries(a.socials).map(([platform, url]) => (
-                  <a
-                    key={platform}
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="dsp-badge no-underline hover:text-white/60 hover:border-white/20 transition-colors"
-                  >
-                    {plabel(platform)}
-                  </a>
-                ))}
-              </div>
-            ) : null}
-          </div>
-
-          {a.profileImage ? (
-            <div className="relative aspect-square rounded-2xl overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={a.profileImage}
-                alt={`${a.name} profile`}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      {/* Releases */}
-      {a.releases.length ? (
-        <section className="py-16 px-6 bg-ink-900 border-t border-white/[0.04]">
-          <div className="max-w-6xl mx-auto">
-            <span className="section-label" style={{ color: a.brandColor }}>
-              Discography
-            </span>
-            <h2 className="section-heading mt-2 mb-8">Releases</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {a.releases.map((r) => (
-                <ReleasePlayer
-                  key={r.title}
-                  title={r.title}
-                  artistName={a.name}
-                  date={r.date}
-                  type={r.type}
-                  coverImage={r.coverImage}
-                  brandColor={r.brandColor}
-                  spotifyId={r.spotifyId}
-                  spotifyType={r.spotifyType}
-                  presave={r.presave}
-                  dsps={r.dsps}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {/* Membership tiers — what each level unlocks */}
-      {a.tiers.length ? (
-        <section className="py-16 px-6 border-t border-white/[0.04]">
-          <div className="max-w-6xl mx-auto">
-            <span className="section-label" style={{ color: a.brandColor }}>
-              Membership
-            </span>
-            <h2 className="section-heading mt-2 mb-3">Join the inner circle</h2>
-            <p className="text-white/50 text-sm mb-8 max-w-2xl">
-              Each tier includes everything from the tiers below it. Become a fan
-              to start at Bronze, then climb.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {a.tiers.map((t) => (
-                <div
-                  key={t.key}
-                  className="rounded-2xl overflow-hidden border border-white/[0.07] bg-white/[0.02] flex flex-col"
-                >
-                  <div
-                    className="px-5 py-4"
-                    style={{
-                      borderTop: `3px solid ${t.color}`,
-                      background: `${t.color}14`,
-                    }}
-                  >
-                    <div className="text-white font-bold text-base">{t.short}</div>
-                    <div className="text-white/50 text-xs">{t.label}</div>
-                    {t.price ? (
-                      <div className="text-white font-body text-sm font-semibold mt-1.5">
-                        {t.price}
-                      </div>
-                    ) : null}
-                  </div>
-                  <ul className="px-5 pt-4 pb-2 flex flex-col gap-3 flex-1">
-                    {t.perks.map((p, i) => (
-                      <li key={i} className="flex gap-2.5 items-start">
-                        <span
-                          className="flex-shrink-0 mt-0.5 w-4 h-4 rounded-full text-white text-[10px] leading-4 text-center"
-                          style={{ background: t.color }}
-                        >
-                          ✓
-                        </span>
-                        <div className="min-w-0">
-                          <div className="text-white/90 text-[13px] font-semibold">
-                            {p.title}
-                          </div>
-                          {p.description ? (
-                            <div className="text-white/45 text-[11.5px] leading-snug">
-                              {p.description}
-                            </div>
-                          ) : null}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="px-5 pb-4">
-                    <UpgradeButton slug={a.slug} tier={t.key} brandColor={a.brandColor} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {/* Members' vault — tier-gated exclusive content */}
-      {a.tiers.length ? <UnlockContent slug={a.slug} brandColor={a.brandColor} /> : null}
-
-      {/* Join the community */}
-      <JoinCommunity slug={a.slug} artistName={a.name} brandColor={a.brandColor} />
-
-      {/* Gallery */}
-      {a.gallery.length ? (
-        <section className="py-16 px-6 border-t border-white/[0.04]">
-          <div className="max-w-6xl mx-auto">
-            <span className="section-label" style={{ color: a.brandColor }}>
-              Gallery
-            </span>
-            <h2 className="section-heading mt-2 mb-8">Visuals</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {a.gallery.slice(0, 12).map((src, i) => (
-                <div
-                  key={src + i}
-                  className="relative aspect-square rounded-xl overflow-hidden"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={src}
-                    alt={`${a.name} photo ${i + 1}`}
-                    loading="lazy"
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 hover:scale-105"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
+      {/* Tabbed content */}
+      <ArtistTabs sections={sections} brandColor={a.brandColor} />
 
       {/* Back link */}
       <div className="py-8 px-6 border-t border-white/[0.04]">
