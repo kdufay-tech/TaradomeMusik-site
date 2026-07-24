@@ -1,1 +1,1 @@
-﻿feat(ux): tabbed public artist pages (Music/Membership/Vault/Gallery/About)
+﻿style(ux): bolder standout section nav under hero (public pages)

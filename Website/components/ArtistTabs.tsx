@@ -17,9 +17,12 @@ export default function ArtistTabs({
 
   return (
     <div>
-      <nav className="sticky top-0 z-30 bg-ink-950/90 backdrop-blur border-y border-white/[0.06]">
+      <nav
+        className="sticky top-0 z-30 -mt-px border-b border-white/10"
+        style={{ background: "#101018", boxShadow: "0 6px 22px rgba(0,0,0,0.45)" }}
+      >
         <div className="max-w-6xl mx-auto px-6">
-          <div className="flex gap-1 overflow-x-auto">
+          <div className="flex gap-6 overflow-x-auto">
             {sections.map((s) => {
               const on = active === s.id;
               return (
@@ -27,12 +30,12 @@ export default function ArtistTabs({
                   key={s.id}
                   onClick={() => setActive(s.id)}
                   aria-selected={on}
-                  className="relative whitespace-nowrap font-body text-sm font-semibold px-4 py-4 transition-colors"
-                  style={{ color: on ? "#fff" : "rgba(255,255,255,0.45)" }}
+                  className="relative whitespace-nowrap font-body text-[15px] font-extrabold tracking-wide py-5 transition-colors"
+                  style={{ color: on ? "#fff" : "rgba(255,255,255,0.6)" }}
                 >
                   {s.label}
                   <span
-                    className="absolute left-3 right-3 bottom-0 h-[2px] rounded-full transition-colors"
+                    className="absolute left-0 right-0 bottom-0 h-[3px] rounded-full transition-colors"
                     style={{ background: on ? brandColor : "transparent" }}
                   />
                 </button>
