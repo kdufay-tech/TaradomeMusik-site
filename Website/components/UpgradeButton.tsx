@@ -12,10 +12,12 @@ export default function UpgradeButton({
   slug,
   tier,
   brandColor,
+  currency = "USD",
 }: {
   slug: string;
   tier: string;
   brandColor: string;
+  currency?: string;
 }) {
   const [enabled, setEnabled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -39,7 +41,7 @@ export default function UpgradeButton({
       const res = await fetch(TEOS_API + "/public/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, kind: "subscription", tier, email }),
+        body: JSON.stringify({ slug, kind: "subscription", tier, email, currency }),
       });
       const data = await res.json();
       if (!res.ok || !data?.url) throw new Error("failed");

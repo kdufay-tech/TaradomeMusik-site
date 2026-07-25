@@ -1,1 +1,1 @@
-﻿feat(chat): drag-and-drop image upload in public community chat
+﻿feat(paystack): ₦/$ currency toggle on membership tiers (gated on Paystack live); pass currency to checkout

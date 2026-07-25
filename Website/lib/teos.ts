@@ -134,7 +134,8 @@ export type PublicTier = {
   label: string;
   color: string;
   perks: PublicPerk[]; // cumulative: everything a fan at this tier unlocks
-  price: string;       // formatted monthly price, e.g. "$9.99/mo" ("" if none)
+  price: string;       // USD monthly price, formatted, e.g. "$9.99/mo" ("" if none)
+  priceNGN: string;    // NGN monthly price, formatted, e.g. "₦12,000/mo" ("" if none)
 };
 
 const FALLBACK_COLOR = "#ff6a3d";
@@ -343,9 +344,9 @@ async function fetchTiers(slug: string): Promise<PublicTier[]> {
     const data = await res.json();
     const byTier: Record<string, Array<{ title?: string; description?: string; category?: string }>> =
       data?.byTier || {};
-    const prices: Record<string, { amount?: number; currency?: string }> = data?.prices || {};
-    const money = (a?: number, c?: string) =>
-      a == null ? "" : (c === "USD" || !c ? "$" : c + " ") + Number(a).toLocaleString() + "/mo";
+    const prices: Record<string, Record<string, number>> = data?.prices || {};
+    const fmtUSD = (a?: number) => (a == null ? "" : "$" + Number(a).toLocaleString() + "/mo");
+    const fmtNGN = (a?: number) => (a == null ? "" : "₦" + Number(a).toLocaleString() + "/mo");
     let running: PublicPerk[] = [];
     const out: PublicTier[] = [];
     for (const meta of TIER_META) {
@@ -355,8 +356,8 @@ async function fetchTiers(slug: string): Promise<PublicTier[]> {
         category: String(p.category || ""),
       }));
       running = running.concat(own);
-      const pr = prices[meta.key];
-      out.push({ ...meta, perks: running.slice(), price: money(pr?.amount, pr?.currency) });
+      const pr = prices[meta.key] || {};
+      out.push({ ...meta, perks: running.slice(), price: fmtUSD(pr.USD), priceNGN: fmtNGN(pr.NGN) });
     }
     // Only surface tiers that actually have perks.
     return out.filter((t) => t.perks.length > 0);
