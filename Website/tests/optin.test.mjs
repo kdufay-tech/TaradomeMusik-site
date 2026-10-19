@@ -113,3 +113,17 @@ test("no form can put personal data in a URL, and none posts to the old 404 rout
 test("the old implied-consent fields are gone from the fan site", () => {
   for (const f of FILES) assert.ok(!/consent_email/.test(f.src), f.p + " still sends consent_email");
 });
+
+// Fix round 1 (review I-5): one postal address, a placeholder until the owner confirms it, and a
+// build that refuses to ship the placeholder.
+test("I-5: the site address is the placeholder and the release gate refuses it", async () => {
+  const data = readFileSync(join(ROOT, "lib", "data.ts"), "utf8");
+  assert.match(data, /address: "\[REGISTERED ADDRESS — OWNER TO CONFIRM\]"/);
+  assert.doesNotMatch(data, /Ademola/);
+  const { addressProblems, assertReleasable } = await import("../release-gate.mjs");
+  assert.deepEqual(addressProblems(data), ["SITE.address in lib/data.ts is still the placeholder"]);
+  assert.deepEqual(addressProblems('address: "1 Example Road, Lagos, Nigeria",'), []);
+  assert.throws(() => assertReleasable({}), /placeholder/);
+  assert.doesNotThrow(() => assertReleasable({ ALLOW_ADDRESS_PLACEHOLDER: "1" }));
+  assert.match(readFileSync(join(ROOT, "next.config.mjs"), "utf8"), /assertReleasable\(process\.env\)/);
+});

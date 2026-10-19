@@ -1,7 +1,12 @@
 import path from "path";
 import { fileURLToPath } from "url";
 
+import { assertReleasable } from "./release-gate.mjs";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// No build while the postal address is a placeholder (TEOS privacy phase 1, review I-5).
+assertReleasable(process.env);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
