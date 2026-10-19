@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { safeCommunityImageUrl } from "../lib/chatUrl";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -19,11 +20,11 @@ const supabase = createClient(SB_URL, SB_ANON, { realtime: { params: { eventsPer
 // only while TEOS still returns it, as a fallback during the rollout.
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_IMAGE = 10 * 1024 * 1024;
-/** Only https URLs are ever rendered (defence in depth; TEOS builds every attachment URL). */
-function safeHttps(u: unknown): string | null {
-  if (typeof u !== "string" || !u) return null;
-  try { return new URL(u).protocol === "https:" ? u : null; } catch { return null; }
-}
+/**
+ * Only this project's public chat images are ever rendered (defence in depth; TEOS builds every
+ * attachment URL, but a forged message on the old public topic could carry any URL). lib/chatUrl.ts.
+ */
+const safeImage = (u: unknown) => safeCommunityImageUrl(u, SB_URL);
 
 type Msg = {
   id: string; author_name: string; author_role: string; body: string; created_at: string;
@@ -162,9 +163,9 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
                   <span className="font-body text-[10px] text-white/30">{new Date(m.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
                 </div>
                 {m.body ? <div className="font-body text-[14px] text-white/85 whitespace-pre-wrap break-words">{m.body}</div> : null}
-                {safeHttps(m.attachment_url) && m.attachment_type === "image" ? (
+                {safeImage(m.attachment_url) && m.attachment_type === "image" ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={safeHttps(m.attachment_url) as string} alt={m.attachment_name || "image"} className="mt-1.5 rounded-lg max-h-64 w-auto border border-white/10" loading="lazy" />
+                  <img src={safeImage(m.attachment_url) as string} alt={m.attachment_name || "image"} className="mt-1.5 rounded-lg max-h-64 w-auto border border-white/10" loading="lazy" />
                 ) : null}
               </div>
             ))}
