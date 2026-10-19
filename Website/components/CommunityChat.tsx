@@ -13,11 +13,23 @@ const SB_ANON =
 
 const supabase = createClient(SB_URL, SB_ANON, { realtime: { params: { eventsPerSecond: 5 } } });
 
+// TEOS security fix M4 (2026-10-19): the community feed is now a PRIVATE, receive-only Realtime topic
+// (`private_topic`, community:<channel id>). Anyone may listen with the public key; only the TEOS API
+// can send, so nobody can inject fake messages any more. `topic` (the old public chat-<id>) is used
+// only while TEOS still returns it, as a fallback during the rollout.
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_IMAGE = 10 * 1024 * 1024;
+/** Only https URLs are ever rendered (defence in depth; TEOS builds every attachment URL). */
+function safeHttps(u: unknown): string | null {
+  if (typeof u !== "string" || !u) return null;
+  try { return new URL(u).protocol === "https:" ? u : null; } catch { return null; }
+}
+
 type Msg = {
   id: string; author_name: string; author_role: string; body: string; created_at: string;
   attachment_url?: string | null; attachment_type?: string | null; attachment_name?: string | null;
 };
-type Pending = { url: string; type: string; name: string; mime: string };
+type Pending = { path: string; url: string; type: string; name: string; mime: string };
 
 export default function CommunityChat({ slug, artistName, brandColor }: { slug: string; artistName: string; brandColor: string }) {
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -42,18 +54,36 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
     let alive = true;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+    let attempts = 0;
+    const listen = (topic: string, isPrivate: boolean) => {
+      if (!alive) return;
+      channel = supabase.channel(topic, { config: { private: isPrivate } });
+      channel.on("broadcast", { event: "message" }, ({ payload }: any) => {
+        if (!payload || !payload.id) return;
+        setMessages((m) => (m.some((x) => x.id === payload.id) ? m : [...m, payload]));
+      }).subscribe((s: string) => {
+        if (s === "SUBSCRIBED") { attempts = 0; setLive(true); return; }
+        if (s === "CHANNEL_ERROR" || s === "TIMED_OUT") {
+          // e.g. the first private join on an idle project can fail once while Realtime prepares
+          // itself: leave the channel and join again with a back-off.
+          setLive(false);
+          const old = channel; channel = null;
+          if (old) supabase.removeChannel(old);
+          attempts += 1;
+          retry = setTimeout(() => listen(topic, isPrivate), Math.min(60000, 2500 * 2 ** Math.min(attempts, 5)));
+        }
+      });
+    };
     fetch(TEOS_API + "/public/artist/" + encodeURIComponent(slug) + "/chat")
       .then((r) => r.json())
       .then((data) => {
         if (!alive) return;
         setMessages(Array.isArray(data?.messages) ? data.messages : []);
-        if (!data?.topic) return;
-        channel = supabase.channel(data.topic);
-        channel.on("broadcast", { event: "message" }, ({ payload }: any) => {
-          setMessages((m) => (m.some((x) => x.id === payload.id) ? m : [...m, payload]));
-        }).subscribe((s: string) => { if (s === "SUBSCRIBED") setLive(true); });
+        if (data?.private_topic) listen(String(data.private_topic), true);
+        else if (data?.topic) listen(String(data.topic), false);   // TEOS from before M4 only
       }).catch(() => {});
-    return () => { alive = false; if (channel) supabase.removeChannel(channel); };
+    return () => { alive = false; if (retry) clearTimeout(retry); if (channel) supabase.removeChannel(channel); };
   }, [slug]);
 
   useEffect(() => { const el = scrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, [messages]);
@@ -66,18 +96,19 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
   }
 
   async function upload(file: File) {
-    if (!file.type.startsWith("image/")) { alert("Only images can be shared here."); return; }
+    if (!IMAGE_TYPES.includes(file.type)) { alert("Only JPEG, PNG, WebP or GIF images can be shared here."); return; }
+    if (file.size > MAX_IMAGE) { alert("Images can be at most 10 MB."); return; }
     setUploading(true);
     try {
       const sign = await fetch(TEOS_API + "/public/artist/" + encodeURIComponent(slug) + "/chat/upload", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, mime: file.type, size: file.size }),
+        body: JSON.stringify({ filename: file.name, mime: file.type, size: file.size, email }),
       });
       const s = await sign.json();
       if (!sign.ok || !s?.put_url) throw new Error(s?.message || "upload failed");
       const put = await fetch(s.put_url, { method: "PUT", headers: { "Content-Type": file.type, "x-upsert": "true" }, body: file });
       if (!put.ok) throw new Error("upload failed");
-      setPending({ url: s.public_url, type: "image", name: file.name, mime: file.type });
+      setPending({ path: String(s.attachment_path || ""), url: s.public_url, type: "image", name: file.name, mime: file.type });
     } catch (e: any) { alert(e.message || "Upload failed"); }
     setUploading(false);
   }
@@ -90,11 +121,17 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
     try {
       const res = await fetch(TEOS_API + "/public/artist/" + encodeURIComponent(slug) + "/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, body, attachment_url: att?.url, attachment_type: att?.type, attachment_name: att?.name, attachment_mime: att?.mime }),
+        // attachment_path is what TEOS reads (M4); attachment_url is kept so the post also works
+        // against a TEOS API deployed before M4.
+        body: JSON.stringify({ email, name, body, attachment_path: att?.path || undefined, attachment_url: att?.url, attachment_type: att?.type, attachment_name: att?.name, attachment_mime: att?.mime }),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Your message was not sent.");
       if (data?.message) setMessages((m) => (m.some((x) => x.id === data.message.id) ? m : [...m, data.message]));
-    } catch { /* ignore */ }
+    } catch (err: any) {
+      setText(body); setPending(att);
+      alert(err?.message || "Your message was not sent.");
+    }
   }
 
   return (
@@ -125,9 +162,9 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
                   <span className="font-body text-[10px] text-white/30">{new Date(m.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
                 </div>
                 {m.body ? <div className="font-body text-[14px] text-white/85 whitespace-pre-wrap break-words">{m.body}</div> : null}
-                {m.attachment_url && m.attachment_type === "image" ? (
+                {safeHttps(m.attachment_url) && m.attachment_type === "image" ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={m.attachment_url} alt={m.attachment_name || "image"} className="mt-1.5 rounded-lg max-h-64 w-auto border border-white/10" loading="lazy" />
+                  <img src={safeHttps(m.attachment_url) as string} alt={m.attachment_name || "image"} className="mt-1.5 rounded-lg max-h-64 w-auto border border-white/10" loading="lazy" />
                 ) : null}
               </div>
             ))}
@@ -148,7 +185,7 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
                   </div>
                 ) : null}
                 <form onSubmit={send} className="flex gap-2 items-center">
-                  <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { if (e.target.files?.[0]) upload(e.target.files[0]); e.target.value = ""; }} />
+                  <input ref={fileRef} type="file" accept={IMAGE_TYPES.join(",")} hidden onChange={(e) => { if (e.target.files?.[0]) upload(e.target.files[0]); e.target.value = ""; }} />
                   <button type="button" onClick={() => fileRef.current?.click()} title="Attach image" className="text-white/50 hover:text-white/90 text-lg px-1">{uploading ? "⏳" : "📎"}</button>
                   <input value={text} onChange={(e) => setText(e.target.value)} placeholder={"Message as " + (name || "you") + "…"} aria-label="Message" className="flex-1 bg-ink-950 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[14px] placeholder:text-white/30 focus:outline-none focus:border-white/25" />
                   <button type="submit" disabled={!text.trim() && !pending} className="rounded-lg px-5 font-body text-[13px] font-semibold text-ink-950 disabled:opacity-50" style={{ background: brandColor }}>Send</button>
