@@ -170,9 +170,10 @@ export const SITE = {
     usa: "+16783798706",
   },
   // The one postal address (TEOS privacy phase 1, review I-5): the same value as TEOS
-  // privacy.config.ts POSTAL_ADDRESS. A placeholder until the owner confirms the registered
-  // address; release-gate.mjs (run by next.config.mjs) refuses to build while it is.
-  address: "[REGISTERED ADDRESS — OWNER TO CONFIRM]",
+  // privacy.config.ts POSTAL_ADDRESS. Owner decision 19 Oct 2026: TáraDomeMusik Limited
+  // (RC 1903598) uses this address for notices and email footers. release-gate.mjs (run by
+  // next.config.mjs) refuses to build if it is ever set back to the placeholder.
+  address: "#5/7 Ademola Street, Ikoyi, Lagos, Nigeria",
   founded: 2021,
   parentLogo: "/images/logo-taradome-parent.png",
 } as const;
