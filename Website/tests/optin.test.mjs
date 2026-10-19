@@ -127,3 +127,14 @@ test("I-5: the site address is the placeholder and the release gate refuses it",
   assert.doesNotThrow(() => assertReleasable({ ALLOW_ADDRESS_PLACEHOLDER: "1" }));
   assert.match(readFileSync(join(ROOT, "next.config.mjs"), "utf8"), /assertReleasable\(process\.env\)/);
 });
+
+// Fix round 2 (N-2): the override is local-only in code, not just by comment. Netlify sets NETLIFY
+// and CONTEXT; CI systems set CI. Any of them makes the flag ignored.
+test("N-2: ALLOW_ADDRESS_PLACEHOLDER is ignored on Netlify and in CI", async () => {
+  const { assertReleasable } = await import("../release-gate.mjs");
+  const ok = { ALLOW_ADDRESS_PLACEHOLDER: "1" };
+  assert.doesNotThrow(() => assertReleasable(ok));
+  for (const extra of [{ NETLIFY: "true" }, { CONTEXT: "production" }, { CONTEXT: "deploy-preview" }, { CI: "true" }, { CI: "1" }]) {
+    assert.throws(() => assertReleasable({ ...ok, ...extra }), /placeholder/, JSON.stringify(extra));
+  }
+});

@@ -13,9 +13,15 @@ export function addressProblems(dataSource) {
     : [];
 }
 
+// Netlify sets NETLIFY and CONTEXT on every build; CI systems set CI. On any of them the override
+// is ignored, so it can only ever let a local check build through (re-review N-2).
+export function overrideAllowed(env = {}) {
+  return env.ALLOW_ADDRESS_PLACEHOLDER === "1" && !env.NETLIFY && !env.CONTEXT && !env.CI;
+}
+
 export function assertReleasable(env = {}) {
   const problems = addressProblems(readFileSync(join(ROOT, "lib", "data.ts"), "utf8"));
-  if (problems.length && env.ALLOW_ADDRESS_PLACEHOLDER !== "1") {
+  if (problems.length && !overrideAllowed(env)) {
     throw new Error("release gate: " + problems.join("; ") + ". Set the confirmed registered address, then rebuild.");
   }
 }
