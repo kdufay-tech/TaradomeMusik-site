@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { PublicMerchItem } from "../lib/teos";
+import MarketingOptIn from "./MarketingOptIn";
+import { requestNewsOptIn } from "../lib/optin";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -9,10 +11,12 @@ const TEOS_API =
 
 export default function MerchStore({
   slug,
+  artistName = "this artist",
   brandColor,
   items,
 }: {
   slug: string;
+  artistName?: string;
   brandColor: string;
   items: PublicMerchItem[];
 }) {
@@ -33,7 +37,7 @@ export default function MerchStore({
         <h2 className="section-heading mt-2 mb-8">Shop</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {items.map((it) => (
-            <ProductCard key={it.id} slug={slug} brandColor={brandColor} item={it} enabled={enabled} />
+            <ProductCard key={it.id} slug={slug} artistName={artistName} brandColor={brandColor} item={it} enabled={enabled} />
           ))}
         </div>
       </div>
@@ -41,13 +45,17 @@ export default function MerchStore({
   );
 }
 
+// Buying is NOT consent to marketing email (TEOS privacy phase 1): a separate, unticked box asks;
+// ticked, TEOS sends a confirmation email before the redirect to payment.
 function ProductCard({
   slug,
+  artistName,
   brandColor,
   item,
   enabled,
 }: {
   slug: string;
+  artistName: string;
   brandColor: string;
   item: PublicMerchItem;
   enabled: boolean;
@@ -55,6 +63,7 @@ function ProductCard({
   const [variant, setVariant] = useState(item.variants[0] || "");
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [optIn, setOptIn] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
 
   async function buy(e: React.FormEvent) {
@@ -65,10 +74,11 @@ function ProductCard({
       const res = await fetch(TEOS_API + "/public/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, kind: "merch", product_id: item.id, variant, email }),
+        body: JSON.stringify({ slug, kind: "merch", product_id: item.id, variant, email, marketing_opt_in: false }),
       });
       const data = await res.json();
       if (!res.ok || !data?.url) throw new Error("failed");
+      if (optIn) await requestNewsOptIn({ slug, email, form: "merch" });
       window.location.href = data.url;
     } catch {
       setStatus("error");
@@ -112,7 +122,7 @@ function ProductCard({
               Buy
             </button>
           ) : (
-            <form onSubmit={buy} className="flex flex-col gap-2">
+            <form onSubmit={buy} method="post" className="flex flex-col gap-2">
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -122,6 +132,7 @@ function ProductCard({
                 aria-label="Your email"
                 className="w-full bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25"
               />
+              <MarketingOptIn artist={artistName} checked={optIn} onChange={setOptIn} compact />
               <button
                 type="submit"
                 disabled={status === "loading"}

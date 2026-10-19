@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { PublicGiveaway } from "../lib/teos";
+import MarketingOptIn from "./MarketingOptIn";
+import { requestNewsOptIn } from "../lib/optin";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -13,10 +15,12 @@ const TIER_LABEL: Record<string, string> = {
 
 export default function GiveawaysBoard({
   slug,
+  artistName = "this artist",
   brandColor,
   items,
 }: {
   slug: string;
+  artistName?: string;
   brandColor: string;
   items: PublicGiveaway[];
 }) {
@@ -29,7 +33,7 @@ export default function GiveawaysBoard({
         <h2 className="section-heading mt-2 mb-8">Win with {" "}the crew</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {items.map((g) => (
-            <GiveawayCard key={g.id} slug={slug} brandColor={brandColor} g={g} />
+            <GiveawayCard key={g.id} slug={slug} artistName={artistName} brandColor={brandColor} g={g} />
           ))}
         </div>
       </div>
@@ -37,10 +41,14 @@ export default function GiveawaysBoard({
   );
 }
 
-function GiveawayCard({ slug, brandColor, g }: { slug: string; brandColor: string; g: PublicGiveaway }) {
+// Entering a giveaway is NOT consent to marketing email (TEOS privacy phase 1). A separate, unticked
+// box asks for news; ticked, TEOS sends a confirmation email after the entry is recorded.
+function GiveawayCard({ slug, artistName, brandColor, g }: { slug: string; artistName: string; brandColor: string; g: PublicGiveaway }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [optIn, setOptIn] = useState(false);
+  const [askedNews, setAskedNews] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [msg, setMsg] = useState("");
 
@@ -52,10 +60,11 @@ function GiveawayCard({ slug, brandColor, g }: { slug: string; brandColor: strin
       const res = await fetch(TEOS_API + "/public/artist/" + encodeURIComponent(slug) + "/giveaway/enter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ giveaway_id: g.id, email, name }),
+        body: JSON.stringify({ giveaway_id: g.id, email, name, marketing_opt_in: false }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setMsg(data?.message || "Could not enter."); setStatus("error"); return; }
+      if (optIn) setAskedNews(await requestNewsOptIn({ slug, email, name, form: "giveaway" }));
       setStatus("done");
     } catch {
       setMsg("Something went wrong.");
@@ -90,6 +99,7 @@ function GiveawayCard({ slug, brandColor, g }: { slug: string; brandColor: strin
               style={{ borderColor: brandColor + "55", background: brandColor + "14" }}
             >
               You&apos;re entered. Good luck! 🍀
+              {askedNews ? <span className="block text-[11px] text-white/60 mt-1">Check your inbox to confirm you want news by email.</span> : null}
             </div>
           ) : !open ? (
             <button
@@ -100,9 +110,10 @@ function GiveawayCard({ slug, brandColor, g }: { slug: string; brandColor: strin
               Enter giveaway
             </button>
           ) : (
-            <form onSubmit={enter} className="flex flex-col gap-2">
+            <form onSubmit={enter} method="post" className="flex flex-col gap-2">
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name (optional)" aria-label="Your name" className="w-full bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25" />
               <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="you@email.com" aria-label="Your email" className="w-full bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25" />
+              <MarketingOptIn artist={artistName} checked={optIn} onChange={setOptIn} compact />
               <button type="submit" disabled={status === "loading"} className="w-full rounded-lg py-2.5 font-body text-[13px] font-semibold text-ink-950 disabled:opacity-60" style={{ background: brandColor }}>
                 {status === "loading" ? "Entering…" : "Enter"}
               </button>

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ARTISTS, RELEASES, ECOSYSTEM, SITE } from "@/lib/data";
 import ReleasePlayer from "@/components/ReleasePlayer";
+import FanListForm from "@/components/FanListForm";
 
 /* ════════════════════════════════════════════════════════════
    HERO
@@ -343,30 +344,10 @@ function FanCTASection() {
           Join the Fan List
         </h3>
         <p className="font-body text-sm text-white/40 mb-6">
-          Early drops, behind-the-scenes, VIP access — delivered by CRM segmentation.
+          Early drops, behind-the-scenes and VIP access, by email. Pick an artist.
         </p>
-        <form
-          className="flex gap-3 max-w-md mx-auto"
-          action="/api/crm/subscribe"
-          method="POST"
-        >
-          <input
-            type="email"
-            name="email"
-            placeholder="your@email.com"
-            required
-            className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-3 text-sm font-body text-white placeholder:text-white/25 focus:outline-none focus:border-ember-400/40 transition-colors"
-          />
-          <button
-            type="submit"
-            className="bg-ember-400 text-white px-6 py-3 rounded-lg text-sm font-semibold font-body hover:bg-ember-500 transition-colors whitespace-nowrap"
-          >
-            Join Free
-          </button>
-        </form>
-        <p className="font-body text-[11px] text-white/20 mt-3">
-          No spam. Unsubscribe anytime.
-        </p>
+        {/* Was a POST to a CRM route this static site does not have (404). TEOS privacy phase 1. */}
+        <FanListForm artists={ARTISTS.map((a) => ({ slug: a.slug, name: a.name }))} form="fan-list" button="Join Free" />
       </div>
     </section>
   );

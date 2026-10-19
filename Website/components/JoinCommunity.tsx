@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import MarketingOptIn from "./MarketingOptIn";
+import { TEOS_API, optInBody } from "../lib/optin";
 
-const TEOS_API =
-  process.env.NEXT_PUBLIC_TEOS_API ||
-  "https://api-production-f6b6.up.railway.app/v1";
-
+// Joins the artist's fan community. Email news is a separate, UNTICKED choice (TEOS privacy
+// phase 1): ticked, TEOS emails a confirmation link and only the click records consent. The
+// request always says marketing_opt_in explicitly.
 export default function JoinCommunity({
   slug,
   artistName,
@@ -17,6 +18,8 @@ export default function JoinCommunity({
 }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [optIn, setOptIn] = useState(false);
+  const [sentOptIn, setSentOptIn] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
 
   async function submit(e: React.FormEvent) {
@@ -27,9 +30,10 @@ export default function JoinCommunity({
       const res = await fetch(TEOS_API + "/public/fan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, email, name }),
+        body: JSON.stringify(optInBody({ slug, email, name, form: "join", optIn })),
       });
       if (!res.ok) throw new Error("failed");
+      setSentOptIn(optIn);
       setStatus("done");
     } catch {
       setStatus("error");
@@ -47,7 +51,7 @@ export default function JoinCommunity({
         </span>
         <h2 className="section-heading mt-2 mb-3">Join {artistName}&apos;s inner circle</h2>
         <p className="font-body text-white/45 mb-8">
-          New releases, exclusive drops, and behind-the-scenes moments — straight to your inbox.
+          Join the fan community. Want new releases, drops and behind-the-scenes news by email too? Tick the box.
         </p>
 
         {status === "done" ? (
@@ -56,33 +60,43 @@ export default function JoinCommunity({
             style={{ borderColor: brandColor + "55", background: brandColor + "14" }}
           >
             You&apos;re in. Welcome to the community. 🎶
+            {sentOptIn ? (
+              <span className="block text-sm text-white/60 mt-2">
+                Check your inbox and click the link to confirm you want news by email.
+              </span>
+            ) : null}
           </div>
         ) : (
-          <form onSubmit={submit} className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Name (optional)"
-              className={inputClass}
-              aria-label="Your name"
-            />
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              required
-              placeholder="you@email.com"
-              className={inputClass}
-              aria-label="Your email"
-            />
-            <button
-              type="submit"
-              disabled={status === "loading"}
-              className="rounded-lg px-7 py-3 font-body text-sm font-semibold text-ink-950 transition-transform hover:scale-[1.03] disabled:opacity-60"
-              style={{ background: brandColor }}
-            >
-              {status === "loading" ? "Joining…" : "Join"}
-            </button>
+          <form onSubmit={submit} method="post" className="max-w-lg mx-auto">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Name (optional)"
+                className={inputClass}
+                aria-label="Your name"
+              />
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                required
+                placeholder="you@email.com"
+                className={inputClass}
+                aria-label="Your email"
+              />
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className="rounded-lg px-7 py-3 font-body text-sm font-semibold text-ink-950 transition-transform hover:scale-[1.03] disabled:opacity-60"
+                style={{ background: brandColor }}
+              >
+                {status === "loading" ? "Joining…" : "Join"}
+              </button>
+            </div>
+            <div className="mt-3">
+              <MarketingOptIn artist={artistName} checked={optIn} onChange={setOptIn} />
+            </div>
           </form>
         )}
 

@@ -19,6 +19,9 @@ export const RESERVED_SLUGS = new Set([
   "spotlight",
   "studio",
   "privacy",
+  "confirm",      // TEOS privacy phase 1: double opt-in landing page
+  "unsubscribe",  // TEOS privacy phase 1: unsubscribe landing page
+  "terms",
   "films",
   "api",
 ]);

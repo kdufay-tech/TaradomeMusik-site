@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import MarketingOptIn from "./MarketingOptIn";
+import { requestNewsOptIn } from "../lib/optin";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -24,14 +26,19 @@ type Item = {
   url: string | null;
 };
 
+// Unlocking is NOT consent to marketing email (TEOS privacy phase 1): a separate, unticked box asks.
 export default function UnlockContent({
   slug,
+  artistName = "this artist",
   brandColor,
 }: {
   slug: string;
+  artistName?: string;
   brandColor: string;
 }) {
   const [email, setEmail] = useState("");
+  const [optIn, setOptIn] = useState(false);
+  const [askedNews, setAskedNews] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [tier, setTier] = useState("free");
   const [items, setItems] = useState<Item[]>([]);
@@ -46,13 +53,14 @@ export default function UnlockContent({
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, marketing_opt_in: false }),
         },
       );
       if (!res.ok) throw new Error("failed");
       const data = await res.json();
       setTier(String(data.tier || "free"));
       setItems(Array.isArray(data.items) ? data.items : []);
+      if (optIn) setAskedNews(await requestNewsOptIn({ slug, email, form: "unlock" }));
       setStatus("done");
     } catch {
       setStatus("error");
@@ -72,7 +80,8 @@ export default function UnlockContent({
           Enter the email you joined with to unlock the content your tier gives you.
         </p>
 
-        <form onSubmit={submit} className="flex flex-col sm:flex-row gap-3 max-w-lg mb-8">
+        <form onSubmit={submit} method="post" className="max-w-lg mb-8">
+          <div className="flex flex-col sm:flex-row gap-3">
           <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -90,7 +99,14 @@ export default function UnlockContent({
           >
             {status === "loading" ? "Checking…" : "Unlock"}
           </button>
+          </div>
+          <div className="mt-3">
+            <MarketingOptIn artist={artistName} checked={optIn} onChange={setOptIn} compact />
+          </div>
         </form>
+        {askedNews ? (
+          <div className="font-body text-xs text-white/55 -mt-5 mb-6">Check your inbox to confirm you want news by email.</div>
+        ) : null}
 
         {status === "error" ? (
           <div className="font-body text-sm mb-4" style={{ color: "#f87171" }}>

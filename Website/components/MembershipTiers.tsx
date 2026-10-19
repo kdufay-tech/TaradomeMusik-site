@@ -10,10 +10,12 @@ const TEOS_API =
 
 export default function MembershipTiers({
   slug,
+  artistName = "this artist",
   brandColor,
   tiers,
 }: {
   slug: string;
+  artistName?: string;
   brandColor: string;
   tiers: PublicTier[];
 }) {
@@ -77,7 +79,7 @@ export default function MembershipTiers({
                 ))}
               </ul>
               <div className="px-5 pb-4">
-                <UpgradeButton slug={slug} tier={t.key} brandColor={brandColor} currency={currency} />
+                <UpgradeButton slug={slug} artistName={artistName} tier={t.key} brandColor={brandColor} currency={currency} />
               </div>
             </div>
           ))}

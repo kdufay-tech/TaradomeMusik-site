@@ -151,25 +151,25 @@ export default async function ArtistPage({
 
   const membershipNode = a.tiers.length ? (
     <div>
-      <MembershipTiers slug={a.slug} brandColor={a.brandColor} tiers={a.tiers} />
+      <MembershipTiers slug={a.slug} artistName={a.name} brandColor={a.brandColor} tiers={a.tiers} />
       <JoinCommunity slug={a.slug} artistName={a.name} brandColor={a.brandColor} />
     </div>
   ) : null;
 
   const vaultNode = a.tiers.length ? (
-    <UnlockContent slug={a.slug} brandColor={a.brandColor} />
+    <UnlockContent slug={a.slug} artistName={a.name} brandColor={a.brandColor} />
   ) : null;
 
   const merchNode = a.merch.length ? (
-    <MerchStore slug={a.slug} brandColor={a.brandColor} items={a.merch} />
+    <MerchStore slug={a.slug} artistName={a.name} brandColor={a.brandColor} items={a.merch} />
   ) : null;
 
   const giveawayNode = a.giveaways.length ? (
-    <GiveawaysBoard slug={a.slug} brandColor={a.brandColor} items={a.giveaways} />
+    <GiveawaysBoard slug={a.slug} artistName={a.name} brandColor={a.brandColor} items={a.giveaways} />
   ) : null;
 
   const eventsNode = a.events.length ? (
-    <EventsBoard slug={a.slug} brandColor={a.brandColor} items={a.events} />
+    <EventsBoard slug={a.slug} artistName={a.name} brandColor={a.brandColor} items={a.events} />
   ) : null;
 
   const communityNode = (

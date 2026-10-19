@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ARTISTS } from "@/lib/data";
+import FanListForm from "@/components/FanListForm";
 
 const artist = ARTISTS[1]; // Zvheer
 
@@ -64,17 +65,9 @@ export default function ZvheerPage() {
               <p className="font-body text-sm text-white/50 mb-3">
                 Zvheer&apos;s first release is coming. Get notified.
               </p>
-              <form className="flex gap-3" action="/api/crm/subscribe" method="POST">
-                <input type="hidden" name="artist" value="zvheer" />
-                <input type="email" name="email" placeholder="your@email.com" required
-                  className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-2.5 text-sm font-body text-white placeholder:text-white/25 focus:outline-none focus:border-zvheer-primary/40 transition-colors"
-                />
-                <button type="submit"
-                  className="bg-zvheer-secondary text-white px-5 py-2.5 rounded-lg text-sm font-semibold font-body hover:bg-zvheer-secondary/80 transition-colors"
-                >
-                  Notify Me
-                </button>
-              </form>
+              {/* Was a POST to a CRM route this static site does not have (404). TEOS privacy phase 1. */}
+              <FanListForm artists={[{ slug: artist.slug, name: artist.name }]} form="notify" button="Notify Me"
+                accentClass="bg-zvheer-secondary hover:bg-zvheer-secondary/80" />
             </div>
           </div>
 

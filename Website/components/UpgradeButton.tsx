@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import MarketingOptIn from "./MarketingOptIn";
+import { requestNewsOptIn } from "../lib/optin";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -8,13 +10,17 @@ const TEOS_API =
 
 // Renders a subscribe CTA on a tier card. Hidden until a payment provider is
 // live (config check), so it appears automatically once Stripe keys are set.
+// A paid membership is NOT consent to marketing email (TEOS privacy phase 1): a separate, unticked
+// box asks; ticked, TEOS sends a confirmation email before the redirect to payment.
 export default function UpgradeButton({
   slug,
+  artistName = "this artist",
   tier,
   brandColor,
   currency = "USD",
 }: {
   slug: string;
+  artistName?: string;
   tier: string;
   brandColor: string;
   currency?: string;
@@ -22,6 +28,7 @@ export default function UpgradeButton({
   const [enabled, setEnabled] = useState(false);
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [optIn, setOptIn] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
 
   useEffect(() => {
@@ -41,10 +48,11 @@ export default function UpgradeButton({
       const res = await fetch(TEOS_API + "/public/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, kind: "subscription", tier, email, currency }),
+        body: JSON.stringify({ slug, kind: "subscription", tier, email, currency, marketing_opt_in: false }),
       });
       const data = await res.json();
       if (!res.ok || !data?.url) throw new Error("failed");
+      if (optIn) await requestNewsOptIn({ slug, email, form: "membership" });
       window.location.href = data.url; // Stripe/Paystack hosted checkout
     } catch {
       setStatus("error");
@@ -64,7 +72,7 @@ export default function UpgradeButton({
   }
 
   return (
-    <form onSubmit={go} className="mt-3 flex flex-col gap-2">
+    <form onSubmit={go} method="post" className="mt-3 flex flex-col gap-2">
       <input
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -74,6 +82,7 @@ export default function UpgradeButton({
         aria-label="Your email"
         className="w-full bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25"
       />
+      <MarketingOptIn artist={artistName} checked={optIn} onChange={setOptIn} compact />
       <button
         type="submit"
         disabled={status === "loading"}

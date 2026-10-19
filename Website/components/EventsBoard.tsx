@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { PublicEvent } from "../lib/teos";
+import MarketingOptIn from "./MarketingOptIn";
+import { requestNewsOptIn } from "../lib/optin";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -13,10 +15,12 @@ const TIER_LABEL: Record<string, string> = {
 
 export default function EventsBoard({
   slug,
+  artistName = "this artist",
   brandColor,
   items,
 }: {
   slug: string;
+  artistName?: string;
   brandColor: string;
   items: PublicEvent[];
 }) {
@@ -37,7 +41,7 @@ export default function EventsBoard({
         <h2 className="section-heading mt-2 mb-8">Live &amp; in the room</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {items.map((e) => (
-            <EventCard key={e.id} slug={slug} brandColor={brandColor} e={e} payEnabled={payEnabled} />
+            <EventCard key={e.id} slug={slug} artistName={artistName} brandColor={brandColor} e={e} payEnabled={payEnabled} />
           ))}
         </div>
       </div>
@@ -53,10 +57,14 @@ function fmtDate(iso: string): string {
     " · " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-function EventCard({ slug, brandColor, e, payEnabled }: { slug: string; brandColor: string; e: PublicEvent; payEnabled: boolean }) {
+// Registering or buying a ticket is NOT consent to marketing email (TEOS privacy phase 1): a separate,
+// unticked box asks; ticked, TEOS sends a confirmation email (before the redirect to payment).
+function EventCard({ slug, artistName, brandColor, e, payEnabled }: { slug: string; artistName: string; brandColor: string; e: PublicEvent; payEnabled: boolean }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [optIn, setOptIn] = useState(false);
+  const [askedNews, setAskedNews] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [msg, setMsg] = useState("");
   const paid = e.price > 0;
@@ -70,18 +78,20 @@ function EventCard({ slug, brandColor, e, payEnabled }: { slug: string; brandCol
       if (paid) {
         const res = await fetch(TEOS_API + "/public/checkout", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ slug, kind: "event", event_id: e.id, email }),
+          body: JSON.stringify({ slug, kind: "event", event_id: e.id, email, marketing_opt_in: false }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data?.url) { setMsg(data?.message || "Could not start checkout."); setStatus("error"); return; }
+        if (optIn) await requestNewsOptIn({ slug, email, name, form: "events" });
         window.location.href = data.url;
       } else {
         const res = await fetch(TEOS_API + "/public/artist/" + encodeURIComponent(slug) + "/event/enroll", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ event_id: e.id, email, name }),
+          body: JSON.stringify({ event_id: e.id, email, name, marketing_opt_in: false }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) { setMsg(data?.message || "Could not register."); setStatus("error"); return; }
+        if (optIn) setAskedNews(await requestNewsOptIn({ slug, email, name, form: "events" }));
         setStatus("done");
       }
     } catch {
@@ -113,6 +123,7 @@ function EventCard({ slug, brandColor, e, payEnabled }: { slug: string; brandCol
           {status === "done" ? (
             <div className="font-body text-[13px] text-white/85 text-center py-2.5 rounded-lg border" style={{ borderColor: brandColor + "55", background: brandColor + "14" }}>
               You&apos;re registered. See you there! 🎤
+              {askedNews ? <span className="block text-[11px] text-white/60 mt-1">Check your inbox to confirm you want news by email.</span> : null}
             </div>
           ) : soldOut ? (
             <div className="text-white/40 font-body text-[12px] text-center py-2">Sold out</div>
@@ -123,9 +134,10 @@ function EventCard({ slug, brandColor, e, payEnabled }: { slug: string; brandCol
               {paid ? "Get a ticket" : "Register free"}
             </button>
           ) : (
-            <form onSubmit={register} className="flex flex-col gap-2">
+            <form onSubmit={register} method="post" className="flex flex-col gap-2">
               {!paid ? <input value={name} onChange={(ev) => setName(ev.target.value)} placeholder="Name (optional)" aria-label="Your name" className="w-full bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25" /> : null}
               <input value={email} onChange={(ev) => setEmail(ev.target.value)} type="email" required placeholder="you@email.com" aria-label="Your email" className="w-full bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25" />
+              <MarketingOptIn artist={artistName} checked={optIn} onChange={setOptIn} compact />
               <button type="submit" disabled={status === "loading"} className="w-full rounded-lg py-2.5 font-body text-[13px] font-semibold text-ink-950 disabled:opacity-60" style={{ background: brandColor }}>
                 {status === "loading" ? (paid ? "Redirecting…" : "Registering…") : (paid ? "Continue to payment" : "Confirm")}
               </button>

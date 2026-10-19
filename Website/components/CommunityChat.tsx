@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { safeCommunityImageUrl } from "../lib/chatUrl";
+import MarketingOptIn from "./MarketingOptIn";
+import { requestNewsOptIn } from "../lib/optin";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -38,6 +40,8 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [joined, setJoined] = useState(false);
+  // Joining the chat is NOT consent to marketing email (TEOS privacy phase 1): separate, unticked box.
+  const [optIn, setOptIn] = useState(false);
   const [live, setLive] = useState(false);
   const [pending, setPending] = useState<Pending | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -94,6 +98,7 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
     if (!email.includes("@")) return;
     try { localStorage.setItem("tm_name", name); localStorage.setItem("tm_email", email); } catch { /* ignore */ }
     setJoined(true);
+    if (optIn) void requestNewsOptIn({ slug, email, name, form: "chat" });
   }
 
   async function upload(file: File) {
@@ -173,10 +178,15 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
 
           <div className="border-t border-white/[0.07] p-3">
             {!joined ? (
-              <form onSubmit={join} className="flex flex-col sm:flex-row gap-2">
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" aria-label="Name" className="flex-1 bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25" />
-                <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="you@email.com" aria-label="Email" className="flex-1 bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25" />
-                <button type="submit" className="rounded-lg px-5 py-2 font-body text-[13px] font-semibold text-ink-950" style={{ background: brandColor }}>Join chat</button>
+              <form onSubmit={join} method="post">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" aria-label="Name" className="flex-1 bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25" />
+                  <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="you@email.com" aria-label="Email" className="flex-1 bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25" />
+                  <button type="submit" className="rounded-lg px-5 py-2 font-body text-[13px] font-semibold text-ink-950" style={{ background: brandColor }}>Join chat</button>
+                </div>
+                <div className="mt-2">
+                  <MarketingOptIn artist={artistName} checked={optIn} onChange={setOptIn} compact />
+                </div>
               </form>
             ) : (
               <>
@@ -185,7 +195,7 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
                     🖼️ {pending.name}<button onClick={() => setPending(null)} className="text-white/40 hover:text-white/70">✕</button>
                   </div>
                 ) : null}
-                <form onSubmit={send} className="flex gap-2 items-center">
+                <form onSubmit={send} method="post" className="flex gap-2 items-center">
                   <input ref={fileRef} type="file" accept={IMAGE_TYPES.join(",")} hidden onChange={(e) => { if (e.target.files?.[0]) upload(e.target.files[0]); e.target.value = ""; }} />
                   <button type="button" onClick={() => fileRef.current?.click()} title="Attach image" className="text-white/50 hover:text-white/90 text-lg px-1">{uploading ? "⏳" : "📎"}</button>
                   <input value={text} onChange={(e) => setText(e.target.value)} placeholder={"Message as " + (name || "you") + "…"} aria-label="Message" className="flex-1 bg-ink-950 border border-white/10 rounded-lg px-3 py-2.5 text-white font-body text-[14px] placeholder:text-white/30 focus:outline-none focus:border-white/25" />

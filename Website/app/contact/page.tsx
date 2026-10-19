@@ -1,4 +1,5 @@
 import { SITE } from "@/lib/data";
+import ContactForm from "@/components/ContactForm";
 
 export default function ContactPage() {
   return (
@@ -27,23 +28,8 @@ export default function ContactPage() {
               <p className="font-body text-base text-white/70">{SITE.address}</p>
             </div>
           </div>
-          <form className="space-y-4">
-            {[
-              { name: "name", label: "Name", type: "text" },
-              { name: "email", label: "Email", type: "email" },
-              { name: "subject", label: "Subject", type: "text" },
-            ].map((f) => (
-              <div key={f.name}>
-                <label className="block font-body text-xs text-white/40 mb-1.5 tracking-wide uppercase">{f.label}</label>
-                <input type={f.type} name={f.name} required className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-3 text-sm font-body text-white focus:outline-none focus:border-ember-400/40 transition-colors" />
-              </div>
-            ))}
-            <div>
-              <label className="block font-body text-xs text-white/40 mb-1.5 tracking-wide uppercase">Message</label>
-              <textarea name="message" rows={5} required className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-3 text-sm font-body text-white focus:outline-none focus:border-ember-400/40 transition-colors resize-none" />
-            </div>
-            <button type="submit" className="w-full bg-ember-400 text-white py-3.5 rounded-lg text-sm font-semibold font-body hover:bg-ember-500 transition-colors">Send Message</button>
-          </form>
+          {/* Was a method-less form: a GET that put name, email and message in the URL. */}
+          <ContactForm />
         </div>
       </div>
     </section>
