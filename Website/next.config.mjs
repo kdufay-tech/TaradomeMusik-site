@@ -1,12 +1,14 @@
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { assertReleasable } from "./release-gate.mjs";
+import { assertPublishableKey, assertReleasable } from "./release-gate.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // No build while the postal address is a placeholder (TEOS privacy phase 1, review I-5).
 assertReleasable(process.env);
+// No Netlify/CI build without the Supabase publishable key for the chat's live feed (TEOS key rotation P-5).
+assertPublishableKey(process.env);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

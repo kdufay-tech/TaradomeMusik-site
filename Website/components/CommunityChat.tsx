@@ -5,16 +5,20 @@ import { createClient } from "@supabase/supabase-js";
 import { safeCommunityImageUrl } from "../lib/chatUrl";
 import MarketingOptIn from "./MarketingOptIn";
 import { requestNewsOptIn } from "../lib/optin";
+import { keyProblemText, resolvePublishableKey } from "../lib/publishableKey";
+import { listenCommunityFeed, mergeMessages, type Reconnector } from "../lib/realtimeReconnect";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
   "https://api-production-f6b6.up.railway.app/v1";
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wfxpxwlynsphutjhhdje.supabase.co";
-const SB_ANON =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmeHB4d2x5bnNwaHV0amhoZGplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyODc0MDQsImV4cCI6MjA5Njg2MzQwNH0.6IKDraiJApONmSfvRF7htoQuJ6ohi0BWz07IYy-UhMY";
-
-const supabase = createClient(SB_URL, SB_ANON, { realtime: { params: { eventsPerSecond: 5 } } });
+// TEOS key rotation P-5 (22 Oct 2026): the live feed uses the Supabase PUBLISHABLE key, taken from the build
+// environment only (NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY; Next inlines it at build time). No key is kept in source.
+// Without a valid key the chat still loads its history and can post (both go through the TEOS API, no key needed);
+// only live updates are off, and the page says so. release-gate.mjs fails a Netlify build without the key.
+const SB_KEY = resolvePublishableKey(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+const supabase = SB_KEY.ok ? createClient(SB_URL, SB_KEY.key, { realtime: { params: { eventsPerSecond: 5 } } }) : null;
+let keyProblemLogged = false;
 
 // TEOS security fix M4 (2026-10-19): the community feed is now a PRIVATE, receive-only Realtime topic
 // (`private_topic`, community:<channel id>). Anyone may listen with the public key; only the TEOS API
@@ -42,7 +46,9 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
   const [joined, setJoined] = useState(false);
   // Joining the chat is NOT consent to marketing email (TEOS privacy phase 1): separate, unticked box.
   const [optIn, setOptIn] = useState(false);
-  const [live, setLive] = useState(false);
+  // connecting -> live; after a drop (e.g. the 24 h cap on public Realtime connections) "reconnecting" until the
+  // channel is back; "off" when the build has no valid publishable key.
+  const [feed, setFeed] = useState<"connecting" | "live" | "reconnecting" | "off">(supabase ? "connecting" : "off");
   const [pending, setPending] = useState<Pending | null>(null);
   const [uploading, setUploading] = useState(false);
   const [drag, setDrag] = useState(false);
@@ -57,38 +63,42 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
   }, []);
 
   useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | null = null;
     let alive = true;
-    let retry: ReturnType<typeof setTimeout> | null = null;
-    let attempts = 0;
-    const listen = (topic: string, isPrivate: boolean) => {
-      if (!alive) return;
-      channel = supabase.channel(topic, { config: { private: isPrivate } });
-      channel.on("broadcast", { event: "message" }, ({ payload }: any) => {
-        if (!payload || !payload.id) return;
-        setMessages((m) => (m.some((x) => x.id === payload.id) ? m : [...m, payload]));
-      }).subscribe((s: string) => {
-        if (s === "SUBSCRIBED") { attempts = 0; setLive(true); return; }
-        if (s === "CHANNEL_ERROR" || s === "TIMED_OUT") {
-          // e.g. the first private join on an idle project can fail once while Realtime prepares
-          // itself: leave the channel and join again with a back-off.
-          setLive(false);
-          const old = channel; channel = null;
-          if (old) supabase.removeChannel(old);
-          attempts += 1;
-          retry = setTimeout(() => listen(topic, isPrivate), Math.min(60000, 2500 * 2 ** Math.min(attempts, 5)));
-        }
-      });
-    };
-    fetch(TEOS_API + "/public/artist/" + encodeURIComponent(slug) + "/chat")
-      .then((r) => r.json())
+    let reconnector: Reconnector | null = null;
+    const historyUrl = TEOS_API + "/public/artist/" + encodeURIComponent(slug) + "/chat";
+    const loadHistory = () => fetch(historyUrl).then((r) => r.json());
+    // Every message goes through mergeMessages: no duplicates (by id), oldest first, bounded.
+    const add = (list: unknown[]) => { if (alive) setMessages((m) => mergeMessages(m, list)); };
+    // Another artist (slug change in the same page instance): never merge two artists' feeds.
+    setMessages([]);
+    setFeed(supabase ? "connecting" : "off");
+    loadHistory()
       .then((data) => {
         if (!alive) return;
-        setMessages(Array.isArray(data?.messages) ? data.messages : []);
-        if (data?.private_topic) listen(String(data.private_topic), true);
-        else if (data?.topic) listen(String(data.topic), false);   // TEOS from before M4 only
+        add(Array.isArray(data?.messages) ? data.messages : []);
+        const isPrivate = !!data?.private_topic;
+        const topic = isPrivate ? String(data.private_topic) : data?.topic ? String(data.topic) : "";  // topic: TEOS before M4 only
+        if (!topic) return;
+        if (!supabase) {
+          if (!keyProblemLogged && !SB_KEY.ok) {
+            keyProblemLogged = true;
+            console.error("[community chat] live updates are off: " + keyProblemText(SB_KEY.reason));
+          }
+          return;
+        }
+        // L-4 (P-5): on CLOSED / CHANNEL_ERROR / TIMED_OUT the channel is removed and, after a jittered backoff,
+        // created and subscribed again (lib/realtimeReconnect.ts). Public Realtime connections on the publishable
+        // key end after at most 24 h; the first private join on an idle project can also fail once (M4).
+        reconnector = listenCommunityFeed(supabase, topic, isPrivate, {
+          onMessage: (payload) => add([payload]),
+          onLive: (v) => { if (alive) setFeed(v ? "live" : "reconnecting"); },
+          // Back on the channel after a drop: fetch the latest history once to fill in what was broadcast meanwhile.
+          onResubscribed: () => {
+            loadHistory().then((d) => { if (Array.isArray(d?.messages)) add(d.messages); }).catch(() => {});
+          },
+        });
       }).catch(() => {});
-    return () => { alive = false; if (retry) clearTimeout(retry); if (channel) supabase.removeChannel(channel); };
+    return () => { alive = false; if (reconnector) reconnector.stop(); };
   }, [slug]);
 
   useEffect(() => { const el = scrollRef.current; if (el) el.scrollTop = el.scrollHeight; }, [messages]);
@@ -133,7 +143,7 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Your message was not sent.");
-      if (data?.message) setMessages((m) => (m.some((x) => x.id === data.message.id) ? m : [...m, data.message]));
+      if (data?.message) setMessages((m) => mergeMessages(m, [data.message]));
     } catch (err: any) {
       setText(body); setPending(att);
       alert(err?.message || "Your message was not sent.");
@@ -146,10 +156,14 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
         <span className="section-label" style={{ color: brandColor }}>Community</span>
         <div className="flex items-center gap-2 mt-2 mb-6">
           <h2 className="section-heading">{artistName}&apos;s community</h2>
-          <span className="flex items-center gap-1.5 font-body text-[11px] text-white/40">
-            <span className="w-2 h-2 rounded-full" style={{ background: live ? "#3FB950" : "#6B6B76" }} />{live ? "live" : "connecting"}
+          <span className="flex items-center gap-1.5 font-body text-[11px] text-white/40" aria-live="polite">
+            <span className="w-2 h-2 rounded-full" style={{ background: feed === "live" ? "#3FB950" : feed === "reconnecting" ? "#D29922" : "#6B6B76" }} />
+            {feed === "off" ? "live updates off" : feed}
           </span>
         </div>
+        {feed === "off" ? (
+          <p className="font-body text-[12px] text-white/45 -mt-4 mb-4">Live updates are unavailable right now. New messages appear when you reload the page.</p>
+        ) : null}
 
         <div
           className="rounded-2xl border bg-white/[0.02] overflow-hidden"
