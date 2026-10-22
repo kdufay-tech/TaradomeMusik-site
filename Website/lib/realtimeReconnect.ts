@@ -3,7 +3,8 @@
 // The fan page listens on a Realtime channel with the PUBLIC publishable key and no signed-in user. Supabase ends
 // such public connections after at most 24 h ("API keys" doc, Known limitations), and any socket can drop. So when
 // the channel reports CLOSED, CHANNEL_ERROR or TIMED_OUT we remove it, wait a jittered exponential backoff and
-// subscribe again; SUBSCRIBED resets the backoff. Pure and framework-free so it is unit-tested
+// subscribe again. The backoff resets only after the channel has stayed SUBSCRIBED for STABLE_MS (review F-4: a
+// server that accepts the join and drops it at once must not get a re-join every second). Pure and framework-free so it is unit-tested
 // (tests/realtimeReconnect.test.mjs); CommunityChat.tsx wires it to supabase-js.
 //
 // Plain, erasable TypeScript only (no enums / parameter properties): node --test runs this file directly.
@@ -12,6 +13,8 @@ export const RECONNECT_STATUSES: readonly string[] = ["CLOSED", "CHANNEL_ERROR",
 
 export type Backoff = { baseMs: number; maxMs: number };
 export const DEFAULT_BACKOFF: Backoff = { baseMs: 2500, maxMs: 60000 };
+/** How long a channel must stay SUBSCRIBED before the backoff starts again from the bottom (review F-4). */
+export const STABLE_MS = 30000;
 
 /**
  * Delay before reconnect attempt `attempt` (1 = first retry). Exponential from `baseMs`, capped at `maxMs`, with
@@ -64,8 +67,13 @@ export type ReconnectDeps<C> = {
   clearTimer: (timer: unknown) => void;
   random?: () => number;
   backoff?: Backoff;
+  /** Time a channel must stay SUBSCRIBED before the backoff resets (default STABLE_MS). */
+  stableMs?: number;
   onLive?: (live: boolean) => void;
-  /** Called on every SUBSCRIBED after the first one: refetch the history to fill the gap. */
+  /**
+   * Called on every SUBSCRIBED after the first one: refetch the history to fill the gap. Not delayed by the stable
+   * period (the gap should fill at once); a flapping channel still cannot call it faster than the backoff allows.
+   */
   onResubscribed?: () => void;
 };
 
@@ -90,8 +98,29 @@ export function createReconnector<C>(deps: ReconnectDeps<C>): Reconnector {
   let everSubscribed = false;
   let current: C | null = null;
   let timer: unknown = null;
+  // F-4: armed on SUBSCRIBED; when it fires for the still-current generation the backoff resets. Cleared on any
+  // failure and on stop(), so at most one of {reconnect timer, stable timer} is ever pending.
+  let stableTimer: unknown = null;
+  let stableGen = -1;                                   // generation the stable timer was armed (or fired) for
 
   const setLive = (v: boolean) => { if (live !== v) { live = v; deps.onLive?.(v); } };
+
+  const clearStable = () => {
+    if (stableTimer !== null) { deps.clearTimer(stableTimer); stableTimer = null; }
+    stableGen = -1;
+  };
+
+  const armStable = (gen: number) => {
+    if (stableGen === gen) return;                     // already armed, or already stable, for this channel
+    clearStable();
+    stableGen = gen;
+    const t: unknown = deps.setTimer(() => {
+      if (stableTimer === t) stableTimer = null;          // never forget a newer timer because an old one fired
+      if (stopped || gen !== generation) return;        // a late timer of an old channel changes nothing
+      attempts = 0;
+    }, deps.stableMs ?? STABLE_MS);
+    stableTimer = t;
+  };
 
   const safeClose = (ch: C | null): Promise<void> =>
     ch === null ? Promise.resolve() : Promise.resolve().then(() => deps.close(ch)).then(() => undefined, () => undefined);
@@ -107,6 +136,7 @@ export function createReconnector<C>(deps: ReconnectDeps<C>): Reconnector {
   const fail = (gen: number, ch: C | null) => {
     if (stopped || gen !== generation) return;
     generation += 1;                          // every later status of this channel is stale
+    clearStable();                            // it did not stay up: the backoff keeps growing
     if (current === ch) current = null;
     setLive(false);
     void safeClose(ch).then(schedule);
@@ -121,7 +151,7 @@ export function createReconnector<C>(deps: ReconnectDeps<C>): Reconnector {
     const onStatus = (status: string) => {
       if (stopped || gen !== generation) return;
       if (status === "SUBSCRIBED") {
-        attempts = 0;
+        armStable(gen);                         // attempts reset only if it stays up (F-4)
         setLive(true);
         if (everSubscribed) deps.onResubscribed?.();
         everSubscribed = true;
@@ -151,6 +181,7 @@ export function createReconnector<C>(deps: ReconnectDeps<C>): Reconnector {
       stopped = true;
       generation += 1;
       if (timer !== null) { deps.clearTimer(timer); timer = null; }
+      clearStable();
       const ch = current; current = null;
       void safeClose(ch);
       live = false;
@@ -176,6 +207,7 @@ export type FeedHandlers = {
   onLive?: (live: boolean) => void;
   onResubscribed?: () => void;
   backoff?: Backoff;
+  stableMs?: number;
   random?: () => number;
 };
 
@@ -210,9 +242,45 @@ export function listenCommunityFeed<C extends FeedChannel>(client: FeedClient<C>
     clearTimer: (t) => clearTimeout(t as ReturnType<typeof setTimeout>),
     random: h.random,
     backoff: h.backoff,
+    stableMs: h.stableMs,
     onLive: h.onLive,
     onResubscribed: h.onResubscribed,
   });
   reconnector.start();
   return reconnector;
+}
+
+export type RetryOptions = {
+  /** Extra tries after the first one (default 1: one retry). */
+  retries?: number;
+  /** Wait before retry `n` (1 = first retry); default backoffDelay(n), i.e. 1.25-2.5 s for the first. */
+  delayMs?: (attempt: number) => number;
+  sleep?: (ms: number) => Promise<void>;
+  /** False once the caller is gone (unmounted): no further try is made. */
+  alive?: () => boolean;
+};
+
+/**
+ * Review F-5: the first history load is what opens the live channel, so one TEOS API blip at page load used to leave
+ * the page on "connecting" until a reload. Retry it (once by default) after a backoff; reject with the last error.
+ */
+export async function loadWithRetry<T>(load: () => Promise<T>, opts: RetryOptions = {}): Promise<T> {
+  const retries = Math.max(0, Math.floor(opts.retries ?? 1));
+  const delayMs = opts.delayMs ?? ((n: number) => backoffDelay(n));
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((res) => { setTimeout(res, ms); }));
+  const alive = opts.alive ?? (() => true);
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (attempt > 0) {
+      if (!alive()) break;
+      await sleep(delayMs(attempt));
+      if (!alive()) break;
+    }
+    try {
+      return await load();
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError;
 }

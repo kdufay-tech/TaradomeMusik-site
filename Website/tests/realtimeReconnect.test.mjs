@@ -96,10 +96,13 @@ test("24 h cap: a server CLOSED tears the channel down, waits, subscribes again 
   h.channels[1].onStatus("SUBSCRIBED");
   assert.deepEqual(h.live, [true, false, true]);
   assert.equal(h.resub, 1, "history is refetched once after the re-subscribe");
-  assert.equal(r.state().attempts, 0, "SUBSCRIBED resets the backoff");
+  assert.equal(r.state().attempts, 1, "SUBSCRIBED alone does not reset the backoff (F-4 flapping guard)");
+  assert.deepEqual(h.pending().map((t) => t.ms), [30000], "only the stable-period timer is pending while live");
+  await h.fire();                                         // the channel stayed up for the stable period
+  assert.equal(r.state().attempts, 0, "a stable SUBSCRIBED resets the backoff");
 });
 
-test("CHANNEL_ERROR then TIMED_OUT for one failure schedules one reconnect, and the backoff grows until SUBSCRIBED", async () => {
+test("CHANNEL_ERROR then TIMED_OUT for one failure schedules one reconnect, and the backoff grows until a stable SUBSCRIBED", async () => {
   const h = harness(); const r = createReconnector(h.deps);
   r.start();
   h.channels[0].onStatus("CHANNEL_ERROR");
@@ -111,8 +114,9 @@ test("CHANNEL_ERROR then TIMED_OUT for one failure schedules one reconnect, and 
   await h.fire(); h.channels[2].onStatus("CHANNEL_ERROR"); await flush();
   assert.deepEqual(h.timers.map((t) => t.ms), [1250, 2500, 5000]);
   await h.fire(); h.channels[3].onStatus("SUBSCRIBED");
+  await h.fire();                                         // stayed SUBSCRIBED for the stable period
   h.channels[3].onStatus("CLOSED"); await flush();
-  assert.equal(h.timers.at(-1).ms, 1250, "after a good subscribe the next failure starts from the bottom again");
+  assert.equal(h.timers.at(-1).ms, 1250, "after a stable subscribe the next failure starts from the bottom again");
   assert.equal(r.state().attempts, 1);
 });
 
@@ -122,10 +126,12 @@ test("over many 24 h cycles there is never more than one open channel and never 
   for (let day = 0; day < 30; day++) {
     const ch = h.channels.at(-1);
     ch.onStatus("SUBSCRIBED");
+    await h.fire();                                       // up for (much more than) the stable period
     ch.onStatus("CLOSED"); ch.onStatus("CHANNEL_ERROR");
     await flush();
     assert.equal(h.openNow().length, 0);
     assert.equal(h.pending().length, 1);
+    assert.equal(h.pending()[0].ms, 1250, "a long-lived channel reconnects from the bottom of the backoff");
     await h.fire();
     assert.equal(h.openNow().length, 1);
   }
@@ -229,7 +235,122 @@ test("open() throwing (e.g. a re-used channel) counts as a failed attempt and is
   await h.fire();
   assert.equal(h.channels.length, 1);
   h.channels[0].onStatus("SUBSCRIBED");
+  assert.equal(r.state().attempts, 2, "not reset until the channel has stayed up");
+  await h.fire();
   assert.equal(r.state().attempts, 0);
+});
+
+// ---------- F-4 flapping guard ----------
+test("flapping (join accepted, then dropped at once) backs off instead of resetting on every SUBSCRIBED", async () => {
+  const h = harness(); const r = createReconnector(h.deps);
+  r.start();
+  const delays = [];
+  for (let i = 0; i < 8; i++) {
+    const ch = h.channels.at(-1);
+    ch.onStatus("SUBSCRIBED");
+    ch.onStatus("CLOSED");                                // the server drops it straight away
+    await flush();
+    assert.equal(h.pending().length, 1, "only the reconnect timer is pending (the stable timer was cleared)");
+    delays.push(h.pending()[0].ms);
+    await h.fire();
+  }
+  assert.deepEqual(delays, [1250, 2500, 5000, 10000, 20000, 30000, 30000, 30000], "exponential up to the cap (random 0)");
+  assert.equal(h.resub, 7, "one history refetch per re-subscribe, so refetches are bounded by the same backoff");
+  assert.equal(h.openNow().length, 1);
+  assert.equal(h.pending().length, 0, "no stable timer leaks (the 9th channel has not subscribed yet)");
+  assert.equal(r.state().attempts, 8);
+  r.stop();
+});
+
+test("the backoff resets only once the channel has stayed SUBSCRIBED for the whole stable period", async () => {
+  const h = harness({ stableMs: 45000 }); const r = createReconnector(h.deps);
+  r.start();
+  h.channels[0].onStatus("CLOSED"); await flush(); await h.fire();      // attempts 1
+  h.channels[1].onStatus("TIMED_OUT"); await flush(); await h.fire();   // attempts 2
+  h.channels[2].onStatus("SUBSCRIBED");
+  const stable = h.pending();
+  assert.deepEqual(stable.map((t) => t.ms), [45000], "stableMs is configurable");
+  assert.equal(r.state().attempts, 2);
+  h.channels[2].onStatus("CLOSED"); await flush();                     // dropped before the period ended
+  assert.equal(stable[0].cleared, true, "a failure cancels the stable timer");
+  assert.equal(h.pending()[0].ms, 5000, "and the backoff keeps growing");
+  await h.fire();
+  h.channels[3].onStatus("SUBSCRIBED");
+  h.channels[3].onStatus("SUBSCRIBED");
+  assert.equal(h.pending().length, 1, "a repeated SUBSCRIBED arms no second stable timer");
+  assert.equal(r.state().attempts, 3);
+  await h.fire();
+  assert.equal(r.state().attempts, 0);
+  h.channels[3].onStatus("SUBSCRIBED");
+  assert.equal(h.pending().length, 0, "nor after the channel is already stable");
+  h.channels[3].onStatus("CLOSED"); await flush();
+  assert.equal(h.pending()[0].ms, 1250);
+  r.stop();
+  assert.equal(h.pending().length, 0);
+});
+
+test("stop() while the stable timer is pending clears it", () => {
+  const h = harness(); const r = createReconnector(h.deps);
+  r.start(); h.channels[0].onStatus("SUBSCRIBED");
+  const stable = h.pending();
+  assert.deepEqual(stable.map((t) => t.ms), [30000]);
+  r.stop();
+  assert.equal(stable[0].cleared, true);
+  assert.equal(h.pending().length, 0);
+});
+
+test("a stable timer that fires late for an old channel does not reset the backoff", async () => {
+  // A clearTimer that does nothing models a timer that still fires after its channel failed.
+  const h = harness({ clearTimer: () => {} }); const r = createReconnector(h.deps);
+  r.start();
+  h.channels[0].onStatus("SUBSCRIBED");
+  const stale = h.timers[0];
+  h.channels[0].onStatus("CLOSED"); await flush();
+  assert.equal(r.state().attempts, 1);
+  stale.fired = true; stale.fn();
+  assert.equal(r.state().attempts, 1, "the old generation's stable timer is ignored");
+  r.stop();
+});
+
+// ---------- F-5 first history load ----------
+test("the first history load is retried once after a backoff, then given up; nothing retries after unmount", async () => {
+  const { loadWithRetry } = await import("../lib/realtimeReconnect.ts");
+  const sleeps = []; const sleep = (ms) => { sleeps.push(ms); return Promise.resolve(); };
+  const delayMs = (n) => backoffDelay(n, undefined, () => 0);
+  let calls = 0;
+  const flaky = () => { calls += 1; return calls === 1 ? Promise.reject(new Error("down")) : Promise.resolve("ok"); };
+  assert.equal(await loadWithRetry(flaky, { retries: 1, delayMs, sleep }), "ok");
+  assert.equal(calls, 2); assert.deepEqual(sleeps, [1250]);
+
+  calls = 0; sleeps.length = 0;
+  const down = () => { calls += 1; return Promise.reject(new Error("down " + calls)); };
+  await assert.rejects(loadWithRetry(down, { retries: 1, delayMs, sleep }), /down 2/);
+  assert.equal(calls, 2, "exactly one retry"); assert.deepEqual(sleeps, [1250]);
+
+  calls = 0; sleeps.length = 0;
+  await assert.rejects(loadWithRetry(down, { retries: 1, delayMs, sleep, alive: () => false }), /down 1/);
+  assert.equal(calls, 1, "no retry once the component is gone");
+
+  calls = 0; sleeps.length = 0; let alive = true;
+  const sleepThenUnmount = (ms) => { sleeps.push(ms); alive = false; return Promise.resolve(); };
+  await assert.rejects(loadWithRetry(down, { retries: 1, delayMs, sleep: sleepThenUnmount, alive: () => alive }), /down 1/);
+  assert.equal(calls, 1, "unmounted during the wait: no retry");
+
+  calls = 0; sleeps.length = 0;
+  assert.equal(await loadWithRetry(() => { calls += 1; return Promise.resolve(7); }, { retries: 1, delayMs, sleep }), 7);
+  assert.equal(calls, 1); assert.deepEqual(sleeps, [], "no wait when the first try works");
+
+  calls = 0;
+  await assert.rejects(loadWithRetry(down, { sleep }), /down 2/, "defaults: one retry");
+  assert.equal(calls, 2);
+});
+
+test("CommunityChat uses the retrying first load and shows 'off' when history cannot be loaded", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../components/CommunityChat.tsx", import.meta.url), "utf8");
+  assert.match(src, /loadWithRetry\(loadHistory/);
+  assert.match(src, /r\.status >= 500 \|\| r\.status === 429/);
+  assert.match(src, /\.catch\(\(\) => \{ if \(alive\) setFeed\("off"\); \}\)/);
 });
 
 test("a failure reported synchronously inside open() still removes that channel and retries once", async () => {

@@ -6,7 +6,7 @@ import { safeCommunityImageUrl } from "../lib/chatUrl";
 import MarketingOptIn from "./MarketingOptIn";
 import { requestNewsOptIn } from "../lib/optin";
 import { keyProblemText, resolvePublishableKey } from "../lib/publishableKey";
-import { listenCommunityFeed, mergeMessages, type Reconnector } from "../lib/realtimeReconnect";
+import { listenCommunityFeed, loadWithRetry, mergeMessages, type Reconnector } from "../lib/realtimeReconnect";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -66,13 +66,19 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
     let alive = true;
     let reconnector: Reconnector | null = null;
     const historyUrl = TEOS_API + "/public/artist/" + encodeURIComponent(slug) + "/chat";
-    const loadHistory = () => fetch(historyUrl).then((r) => r.json());
+    // A 5xx / 429 is a failure worth retrying (F-5); any other status is parsed as before.
+    const loadHistory = () => fetch(historyUrl).then((r) => {
+      if (r.status >= 500 || r.status === 429) throw new Error("chat history unavailable (" + r.status + ")");
+      return r.json();
+    });
     // Every message goes through mergeMessages: no duplicates (by id), oldest first, bounded.
     const add = (list: unknown[]) => { if (alive) setMessages((m) => mergeMessages(m, list)); };
     // Another artist (slug change in the same page instance): never merge two artists' feeds.
     setMessages([]);
     setFeed(supabase ? "connecting" : "off");
-    loadHistory()
+    // F-5: the first load opens the live channel, so one TEOS API blip must not leave the page on "connecting":
+    // retry once after a 1.25-2.5 s backoff; if it still fails, say live updates are off (reload to try again).
+    loadWithRetry(loadHistory, { retries: 1, alive: () => alive })
       .then((data) => {
         if (!alive) return;
         add(Array.isArray(data?.messages) ? data.messages : []);
@@ -97,7 +103,7 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
             loadHistory().then((d) => { if (Array.isArray(d?.messages)) add(d.messages); }).catch(() => {});
           },
         });
-      }).catch(() => {});
+      }).catch(() => { if (alive) setFeed("off"); });
     return () => { alive = false; if (reconnector) reconnector.stop(); };
   }, [slug]);
 

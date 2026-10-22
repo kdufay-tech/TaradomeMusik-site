@@ -13,11 +13,15 @@ export type KeyCheck =
   | { ok: true; key: string }
   | { ok: false; reason: "missing" | "legacy-jwt" | "secret-key" | "unrecognised" };
 
+/** A JWT anywhere in a value: header.payload.signature, both JSON parts base64url ("eyJ..."). */
+export const JWT_SHAPE = /eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/;
+
 export function resolvePublishableKey(raw: unknown): KeyCheck {
   const v = typeof raw === "string" ? raw.trim() : "";
   if (!v) return { ok: false, reason: "missing" };
-  if (v.startsWith("eyJ")) return { ok: false, reason: "legacy-jwt" };
-  if (v.startsWith("sb_secret_")) return { ok: false, reason: "secret-key" };
+  // A secret key ANYWHERE in the value is refused first (P-5 fix round, review F-1), then a JWT anywhere.
+  if (v.includes("sb_secret_")) return { ok: false, reason: "secret-key" };
+  if (v.startsWith("eyJ") || JWT_SHAPE.test(v)) return { ok: false, reason: "legacy-jwt" };
   if (/^sb_publishable_[A-Za-z0-9_-]+$/.test(v)) return { ok: true, key: v };
   return { ok: false, reason: "unrecognised" };
 }
