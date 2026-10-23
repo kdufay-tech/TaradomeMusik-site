@@ -12,6 +12,9 @@ Website/out/
 .env.*
 !.env.example
 
+# Terraform AWS variable files hold db_password: only the *.tfvars.example templates are tracked (p5 fix 2).
+terraform/aws/env/*.tfvars
+
 # Local Netlify folder
 .netlify
 

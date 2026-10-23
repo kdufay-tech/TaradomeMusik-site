@@ -1,0 +1,8 @@
+# Template: copy to prod.tfvars (git-ignored) and set real values there. Never commit the real file.
+# db_password: CHANGE_ME is a placeholder. Set the real value only in the git-ignored copy, or delete the line there
+# and export TF_VAR_db_password instead (a -var-file value overrides TF_VAR_*).
+aws_region = "us-east-1"
+project = "taradome"
+env = "prod"
+db_username = "taradome_admin"
+db_password = "CHANGE_ME"

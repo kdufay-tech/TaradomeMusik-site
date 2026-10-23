@@ -6,7 +6,7 @@ import { safeCommunityImageUrl } from "../lib/chatUrl";
 import MarketingOptIn from "./MarketingOptIn";
 import { requestNewsOptIn } from "../lib/optin";
 import { keyProblemText, resolvePublishableKey } from "../lib/publishableKey";
-import { listenCommunityFeed, loadWithRetry, mergeMessages, type Reconnector } from "../lib/realtimeReconnect";
+import { communityHistoryUrl, listenCommunityFeed, loadWithRetry, mergeMessages, type Reconnector } from "../lib/realtimeReconnect";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -65,7 +65,8 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
   useEffect(() => {
     let alive = true;
     let reconnector: Reconnector | null = null;
-    const historyUrl = TEOS_API + "/public/artist/" + encodeURIComponent(slug) + "/chat";
+    // Latest HISTORY_LIMIT (100) messages, on the first load and on every re-subscribe back-fill.
+    const historyUrl = communityHistoryUrl(TEOS_API, slug);
     // A 5xx / 429 is a failure worth retrying (F-5); any other status is parsed as before.
     const loadHistory = () => fetch(historyUrl).then((r) => {
       if (r.status >= 500 || r.status === 429) throw new Error("chat history unavailable (" + r.status + ")");

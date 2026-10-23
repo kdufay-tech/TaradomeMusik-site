@@ -31,6 +31,19 @@ export function backoffDelay(attempt: number, backoff: Backoff = DEFAULT_BACKOFF
 /** How many messages a page keeps (and renders). A page left open for days stays bounded. */
 export const MAX_KEPT_MESSAGES = 200;
 
+/**
+ * How many of the latest messages the history GET asks for, on the first load and on every re-subscribe back-fill
+ * (owner, 22 Oct 2026: 100 instead of 60). MAX_KEPT_MESSAGES stays at 2 x this, so a full back-fill plus live
+ * traffic is kept and deduped by id. NOTE: TEOS `GET /v1/public/artist/:slug/chat` (chat.service.ts `recent()`)
+ * returns a fixed 60 and ignores `limit` until the TEOS API reads it; the page then gets 100 with no change here.
+ */
+export const HISTORY_LIMIT = 100;
+
+/** The TEOS history URL for an artist's community chat: `<api>/public/artist/<slug>/chat?limit=<limit>`. */
+export function communityHistoryUrl(api: string, slug: string, limit: number = HISTORY_LIMIT): string {
+  return api + "/public/artist/" + encodeURIComponent(slug) + "/chat?limit=" + String(limit);
+}
+
 type HasId = { id: string; created_at?: string };
 
 function timeOf(x: HasId): number {

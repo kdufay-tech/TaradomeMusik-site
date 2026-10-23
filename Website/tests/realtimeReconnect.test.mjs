@@ -4,7 +4,7 @@
 // Run from Website/: npm test
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { backoffDelay, mergeMessages, createReconnector, RECONNECT_STATUSES, MAX_KEPT_MESSAGES } from "../lib/realtimeReconnect.ts";
+import { backoffDelay, mergeMessages, createReconnector, RECONNECT_STATUSES, MAX_KEPT_MESSAGES, HISTORY_LIMIT, communityHistoryUrl } from "../lib/realtimeReconnect.ts";
 import { resolvePublishableKey, PUBLISHABLE_KEY_ENV } from "../lib/publishableKey.ts";
 
 // ---------- backoff ----------
@@ -42,6 +42,32 @@ test("merge ignores items without an id, tolerates odd timestamps and keeps only
   assert.equal(capped[0].id, "m50");
   assert.equal(capped.at(-1).id, "m" + (MAX_KEPT_MESSAGES + 49));
   assert.equal(mergeMessages([], many, 3).length, 3);
+});
+
+// ---------- history back-fill size (p5 fix 2, owner 22 Oct 2026: 100 instead of 60) ----------
+test("the history GET asks for the latest 100, and the page keeps at least 200 (2 x the back-fill)", () => {
+  assert.equal(HISTORY_LIMIT, 100);
+  assert.ok(MAX_KEPT_MESSAGES >= 200, "in-memory cap is at least 200");
+  assert.ok(MAX_KEPT_MESSAGES >= 2 * HISTORY_LIMIT, "a full back-fill never pushes out more than it brings");
+  assert.equal(communityHistoryUrl("https://api.example/v1", "irhay"), "https://api.example/v1/public/artist/irhay/chat?limit=100");
+  assert.equal(communityHistoryUrl("https://api.example/v1", "a b/c?d"), "https://api.example/v1/public/artist/a%20b%2Fc%3Fd/chat?limit=100");
+  assert.equal(communityHistoryUrl("https://api.example/v1", "zv", 25), "https://api.example/v1/public/artist/zv/chat?limit=25");
+});
+
+test("first load of 100, live messages, then a reconnect back-fill of the newest 100: nothing lost, no duplicates", () => {
+  const at = (i) => ({ id: "h" + i, created_at: new Date(2e12 + i * 1000).toISOString(), body: "h" + i });
+  const range = (a, b) => Array.from({ length: b - a }, (_, k) => at(a + k));
+  let held = mergeMessages([], range(0, HISTORY_LIMIT));              // first load: h0..h99
+  held = mergeMessages(held, range(100, 130));                        // 30 live messages: h100..h129
+  assert.equal(held.length, 130);
+  // dropped for a while; h130..h159 were broadcast meanwhile; the back-fill returns the newest 100 = h60..h159
+  held = mergeMessages(held, range(60, 160));
+  assert.equal(held.length, 160, "70 overlapping are deduped, 30 missed are added");
+  assert.deepEqual(held.map((x) => x.id), range(0, 160).map((x) => x.id), "ascending, contiguous, no duplicates");
+  held = mergeMessages(held, range(160, 260));                        // 100 more live
+  assert.equal(held.length, MAX_KEPT_MESSAGES);
+  assert.equal(held[0].id, "h" + (260 - MAX_KEPT_MESSAGES));
+  assert.equal(held.at(-1).id, "h259");
 });
 
 // ---------- reconnector harness ----------
@@ -351,6 +377,15 @@ test("CommunityChat uses the retrying first load and shows 'off' when history ca
   assert.match(src, /loadWithRetry\(loadHistory/);
   assert.match(src, /r\.status >= 500 \|\| r\.status === 429/);
   assert.match(src, /\.catch\(\(\) => \{ if \(alive\) setFeed\("off"\); \}\)/);
+});
+
+test("CommunityChat loads history (first load and re-subscribe back-fill) through communityHistoryUrl only", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../components/CommunityChat.tsx", import.meta.url), "utf8");
+  assert.match(src, /const historyUrl = communityHistoryUrl\(TEOS_API, slug\);/);
+  assert.equal((src.match(/fetch\(historyUrl\)/g) || []).length, 1, "one history fetch, shared by first load and back-fill");
+  assert.match(src, /onResubscribed: \(\) => \{\s*loadHistory\(\)/, "the back-fill reuses loadHistory");
+  assert.doesNotMatch(src, /"\/chat"\)?;?\s*$/m, "no hand-built history URL without the limit");
 });
 
 test("a failure reported synchronously inside open() still removes that channel and retries once", async () => {

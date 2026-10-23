@@ -1,5 +1,0 @@
-aws_region = "us-east-1"
-project = "taradome"
-env = "dev"
-db_username = "taradome_admin"
-db_password = "CHANGE_ME"
