@@ -6,7 +6,7 @@ import { safeCommunityImageUrl } from "../lib/chatUrl";
 import MarketingOptIn from "./MarketingOptIn";
 import { requestNewsOptIn } from "../lib/optin";
 import { keyProblemText, resolvePublishableKey } from "../lib/publishableKey";
-import { communityHistoryUrl, listenCommunityFeed, loadWithRetry, mergeMessages, type Reconnector } from "../lib/realtimeReconnect";
+import { communityHistoryUrl, createHeartbeatMonitor, listenCommunityFeed, loadWithRetry, mergeMessages, type Reconnector } from "../lib/realtimeReconnect";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -17,7 +17,12 @@ const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wfxpxwlynsphutjh
 // Without a valid key the chat still loads its history and can post (both go through the TEOS API, no key needed);
 // only live updates are off, and the page says so. release-gate.mjs fails a Netlify build without the key.
 const SB_KEY = resolvePublishableKey(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
-const supabase = SB_KEY.ok ? createClient(SB_URL, SB_KEY.key, { realtime: { params: { eventsPerSecond: 5 } } }) : null;
+// 24 Oct 2026 (open-tab incident): the socket's heartbeat acks feed the liveness watchdog in lib/realtimeReconnect.ts,
+// so "live" means the socket answers, not just that the channel once said SUBSCRIBED.
+const heartbeat = createHeartbeatMonitor();
+const supabase = SB_KEY.ok
+  ? createClient(SB_URL, SB_KEY.key, { realtime: { params: { eventsPerSecond: 5 }, heartbeatCallback: heartbeat.callback } })
+  : null;
 let keyProblemLogged = false;
 
 // TEOS security fix M4 (2026-10-19): the community feed is now a PRIVATE, receive-only Realtime topic
@@ -96,6 +101,9 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
         // L-4 (P-5): on CLOSED / CHANNEL_ERROR / TIMED_OUT the channel is removed and, after a jittered backoff,
         // created and subscribed again (lib/realtimeReconnect.ts). Public Realtime connections on the publishable
         // key end after at most 24 h; the first private join on an idle project can also fail once (M4).
+        // 24 Oct 2026: also when the socket is found dead without any channel event (watchdog, heartbeat timeout),
+        // and on every page-lifecycle return (back/forward cache restore, resume from a sleeping tab, online, a long
+        // hide): full re-subscribe on a fresh socket, "reconnecting" until a fresh SUBSCRIBED.
         reconnector = listenCommunityFeed(supabase, topic, isPrivate, {
           onMessage: (payload) => add([payload]),
           onLive: (v) => { if (alive) setFeed(v ? "live" : "reconnecting"); },
@@ -103,6 +111,8 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
           onResubscribed: () => {
             loadHistory().then((d) => { if (Array.isArray(d?.messages)) add(d.messages); }).catch(() => {});
           },
+          heartbeat,
+          lifecycle: typeof window !== "undefined" ? { win: window, doc: document } : null,
         });
       }).catch(() => { if (alive) setFeed("off"); });
     return () => { alive = false; if (reconnector) reconnector.stop(); };

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { PublicEvent } from "../lib/teos";
 import MarketingOptIn from "./MarketingOptIn";
 import { requestNewsOptIn } from "../lib/optin";
+import { eventTimeText } from "../lib/eventTime";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -25,6 +26,10 @@ export default function EventsBoard({
   items: PublicEvent[];
 }) {
   const [payEnabled, setPayEnabled] = useState(false);
+  // Hydration (#425/#418/#423, 24 Oct 2026): the first render shows the start time in UTC on both the server (static
+  // build) and the client, so the text matches; after mount the cards switch to the visitor's local time.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     fetch(TEOS_API + "/public/payments/config")
       .then((r) => r.json())
@@ -41,7 +46,7 @@ export default function EventsBoard({
         <h2 className="section-heading mt-2 mb-8">Live &amp; in the room</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {items.map((e) => (
-            <EventCard key={e.id} slug={slug} artistName={artistName} brandColor={brandColor} e={e} payEnabled={payEnabled} />
+            <EventCard key={e.id} slug={slug} artistName={artistName} brandColor={brandColor} e={e} payEnabled={payEnabled} mounted={mounted} />
           ))}
         </div>
       </div>
@@ -49,17 +54,9 @@ export default function EventsBoard({
   );
 }
 
-function fmtDate(iso: string): string {
-  if (!iso) return "Date TBA";
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return "Date TBA";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
-    " · " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-}
-
 // Registering or buying a ticket is NOT consent to marketing email (TEOS privacy phase 1): a separate,
 // unticked box asks; ticked, TEOS sends a confirmation email (before the redirect to payment).
-function EventCard({ slug, artistName, brandColor, e, payEnabled }: { slug: string; artistName: string; brandColor: string; e: PublicEvent; payEnabled: boolean }) {
+function EventCard({ slug, artistName, brandColor, e, payEnabled, mounted }: { slug: string; artistName: string; brandColor: string; e: PublicEvent; payEnabled: boolean; mounted: boolean }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -111,7 +108,7 @@ function EventCard({ slug, artistName, brandColor, e, payEnabled }: { slug: stri
           {gate ? <span className="font-body text-[10px] font-semibold text-white/55 border border-white/15 rounded-full px-2 py-0.5">{gate}+</span> : null}
         </div>
         <div className="text-white font-body text-[15px] font-bold">{e.title}</div>
-        <div className="text-white/50 font-body text-xs mt-1">{fmtDate(e.startsAt)}</div>
+        <div className="text-white/50 font-body text-xs mt-1"><time dateTime={e.startsAt || undefined}>{eventTimeText(e.startsAt, mounted)}</time></div>
         <div className="text-white/45 font-body text-xs">{e.isVirtual ? "🌐 Virtual" : "📍 " + (e.location || "In person")}</div>
         {e.description ? <div className="text-white/45 font-body text-xs mt-2 line-clamp-2">{e.description}</div> : null}
         <div className="flex items-center justify-between mt-3">
