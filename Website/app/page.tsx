@@ -54,11 +54,6 @@ function Hero() {
         >
           Listen Now
         </Link>
-        <a href="https://onerpm.link/143394760138" target="_blank" rel="noreferrer"
-          className="border border-ember-400/30 text-ember-400 px-8 py-3.5 rounded-lg text-sm font-semibold font-body tracking-wide no-underline hover:border-ember-400/60 transition-colors"
-        >
-          Pre-Save ↗
-        </a>
       </div>
 
       {/* Scrolling ticker */}

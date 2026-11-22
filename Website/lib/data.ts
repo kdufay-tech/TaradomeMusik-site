@@ -113,7 +113,7 @@ export const RELEASES = [
     type: "Single" as const,
     date: "October 21, 2022",
     dateISO: "2022-10-21",
-    presave: "https://onerpm.link/143394760138",
+    presave: "",
     coverImage: "/images/cover-easy-on-me.jpg",
     brandColor: "#D4844C",
     spotifyId: "6ccSSfty1jgIa1vFWI8J56",
