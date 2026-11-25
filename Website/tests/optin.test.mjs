@@ -6,25 +6,35 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { optInLabel, optInBody, tokenFromSearch } from "../lib/optin.ts";
+import { optInLabel, optInBody, tokenFromSearch, OPTIN_VERSION } from "../lib/optin.ts";
 import { confirmCopy, unsubscribeCopy, PRIVACY_EMAIL } from "../lib/privacyCopy.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-// Exactly TEOS apps/api/src/modules/privacy/privacy.config.ts OPTIN_TEXT_V1. If either side changes,
-// both must change together with a new version, because the API stores this text's hash as evidence.
-const API_OPTIN_TEXT_V1 = "Email me news from {artist}: new music, shows and offers. Optional. You can unsubscribe at any time.";
-const API_OPTIN_SHA256 = createHash("sha256").update(API_OPTIN_TEXT_V1, "utf8").digest("hex");
+// Exactly TEOS apps/api/src/modules/privacy/privacy.config.ts OPTIN_TEXT_V2 (Fan Magnet F1, 2026-11-25). If
+// either side changes, both must change together with a new version, because the API stores this text's hash as
+// evidence -- and the request must name the version the page showed (optin_version), or TEOS records V1's hash.
+const API_OPTIN_TEXT_V2 = "Email me news from {artist}: new music, shows and offers, and show me relevant ads on social media. Optional. You can unsubscribe at any time.";
+const API_OPTIN_SHA256 = createHash("sha256").update(API_OPTIN_TEXT_V2, "utf8").digest("hex");
 
 test("the box shows exactly the wording whose hash TEOS stores as evidence", () => {
-  assert.equal(optInLabel("{artist}"), API_OPTIN_TEXT_V1);
+  assert.equal(optInLabel("{artist}"), API_OPTIN_TEXT_V2);
   assert.equal(createHash("sha256").update(optInLabel("{artist}"), "utf8").digest("hex"), API_OPTIN_SHA256);
   assert.match(optInLabel("IRhay"), /^Email me news from IRhay: /);
 });
 
+test("every opt-in request names the wording version the page showed", () => {
+  assert.equal(OPTIN_VERSION, "optin-v2");
+  assert.equal(optInBody({ slug: "s", email: "a@b.co", form: "join", optIn: true }).optin_version, "optin-v2");
+});
+
+test("the confirm page describes the same thing the box asked for, ads included", () => {
+  assert.match(confirmCopy("valid", "IRhay").body.join(" "), /relevant ads on social media/);
+});
+
 test("every opt-in request says marketing_opt_in explicitly, and only `true` means yes", () => {
   const yes = optInBody({ slug: "irhay", email: " a@b.co ", name: " Ada ", form: "giveaway", optIn: true });
-  assert.deepEqual(yes, { slug: "irhay", email: "a@b.co", name: "Ada", source: "fan_site", source_form: "fan-site:giveaway", marketing_opt_in: true });
+  assert.deepEqual(yes, { slug: "irhay", email: "a@b.co", name: "Ada", source: "fan_site", source_form: "fan-site:giveaway", marketing_opt_in: true, optin_version: "optin-v2" });
   for (const v of [false, undefined, "true", 1]) {
     assert.equal(optInBody({ slug: "s", email: "a@b.co", form: "join", optIn: v }).marketing_opt_in, false, String(v));
   }

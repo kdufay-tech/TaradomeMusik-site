@@ -1,7 +1,8 @@
 /* ─── Marketing email opt-in (TEOS privacy phase 1, 2026-10-19) ───
  * Every fan form that collects an email shows ONE unticked, optional box with this exact wording.
- * It must match OPTIN_TEXT_V1 in TEOS apps/api/src/modules/privacy/privacy.config.ts: the API stores
- * the SHA-256 of that text with the fan's consent as evidence.
+ * It must match OPTIN_TEXT_V2 in TEOS apps/api/src/modules/privacy/privacy.config.ts (Fan Magnet F1, 2026-11-25):
+ * the API stores the SHA-256 of that text with the fan's consent as evidence, picking the text by the
+ * `optin_version` the request sends. Change the wording only together with a new version on both sides.
  *
  * Ticking it never subscribes anyone by itself. The API emails a confirmation link (double opt-in)
  * and only the click on that link records consent. Unticked, nothing about marketing is sent.
@@ -12,8 +13,10 @@ export const TEOS_API: string =
   process.env.NEXT_PUBLIC_TEOS_API ||
   "https://api-production-f6b6.up.railway.app/v1";
 
+export const OPTIN_VERSION = "optin-v2";
+
 export function optInLabel(artist: string): string {
-  return "Email me news from " + artist + ": new music, shows and offers. Optional. You can unsubscribe at any time.";
+  return "Email me news from " + artist + ": new music, shows and offers, and show me relevant ads on social media. Optional. You can unsubscribe at any time.";
 }
 
 /** Short line under a form, said BEFORE the person gives consent (NDPA s.26(4)). */
@@ -31,6 +34,7 @@ export function optInBody(p: { slug: string; email: string; name?: string | null
     source: "fan_site",
     source_form: "fan-site:" + p.form,
     marketing_opt_in: p.optIn === true,
+    optin_version: OPTIN_VERSION,
   };
 }
 

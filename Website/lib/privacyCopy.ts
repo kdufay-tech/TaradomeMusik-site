@@ -14,7 +14,7 @@ export function confirmCopy(state: string, name: string): Copy {
       return {
         title: "Confirm you want news from " + name,
         body: [
-          "Click the button to start getting news from " + name + " by email: new music, shows and offers.",
+          "Click the button to start getting news from " + name + " by email: new music, shows and offers, and relevant ads on social media.",
           "You can unsubscribe at any time with the link at the bottom of every email.",
         ],
         button: "Yes, send me news",
