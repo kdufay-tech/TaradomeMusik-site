@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { PublicGiveaway } from "../lib/teos";
 import MarketingOptIn from "./MarketingOptIn";
 import { requestNewsOptIn } from "../lib/optin";
+import AgeQuestion from "./AgeQuestion";
+import { validateAge, ageFields, guardianNeeded, GUARDIAN_NEEDED_MESSAGE, type AgeBand } from "../lib/age";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -51,20 +53,27 @@ function GiveawayCard({ slug, artistName, brandColor, g }: { slug: string; artis
   const [askedNews, setAskedNews] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [msg, setMsg] = useState("");
+  // TEOS fan age check (2026-11-27): the age answer; 13 to 17 also gives a parent's email.
+  const [age, setAge] = useState<AgeBand | "">("");
+  const [guardian, setGuardian] = useState("");
+  const [parentAsked, setParentAsked] = useState(false);
 
   async function enter(e: React.FormEvent) {
     e.preventDefault();
     if (!email.includes("@")) return;
+    const ageMsg = validateAge(age, guardian, email);
+    if (ageMsg) { setMsg(ageMsg); setStatus("error"); return; }
     setStatus("loading");
     try {
       const res = await fetch(TEOS_API + "/public/artist/" + encodeURIComponent(slug) + "/giveaway/enter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ giveaway_id: g.id, email, name, marketing_opt_in: false }),
+        body: JSON.stringify({ giveaway_id: g.id, email, name, marketing_opt_in: false, ...ageFields(age, guardian) }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setMsg(data?.message || "Could not enter."); setStatus("error"); return; }
-      if (optIn) setAskedNews(await requestNewsOptIn({ slug, email, name, form: "giveaway" }));
+      if (!res.ok || data?.ok === false) { setMsg(data?.message || "Could not enter."); setStatus("error"); return; }
+      setParentAsked(guardianNeeded(data));
+      if (optIn) setAskedNews(await requestNewsOptIn({ slug, email, name, form: "giveaway", age: ageFields(age, guardian) }));
       setStatus("done");
     } catch {
       setMsg("Something went wrong.");
@@ -99,6 +108,7 @@ function GiveawayCard({ slug, artistName, brandColor, g }: { slug: string; artis
               style={{ borderColor: brandColor + "55", background: brandColor + "14" }}
             >
               You&apos;re entered. Good luck! 🍀
+              {parentAsked ? <span className="block text-[11px] text-white/60 mt-1">{GUARDIAN_NEEDED_MESSAGE}</span> : null}
               {askedNews ? <span className="block text-[11px] text-white/60 mt-1">Check your inbox to confirm you want news by email.</span> : null}
             </div>
           ) : !open ? (
@@ -114,6 +124,7 @@ function GiveawayCard({ slug, artistName, brandColor, g }: { slug: string; artis
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name (optional)" aria-label="Your name" className="w-full bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25" />
               <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="you@email.com" aria-label="Your email" className="w-full bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25" />
               <MarketingOptIn artist={artistName} checked={optIn} onChange={setOptIn} compact />
+              <AgeQuestion id={"giveaway-age-" + g.id} value={age} onChange={setAge} guardianEmail={guardian} onGuardianEmail={setGuardian} compact />
               <button type="submit" disabled={status === "loading"} className="w-full rounded-lg py-2.5 font-body text-[13px] font-semibold text-ink-950 disabled:opacity-60" style={{ background: brandColor }}>
                 {status === "loading" ? "Entering…" : "Enter"}
               </button>

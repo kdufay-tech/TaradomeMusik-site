@@ -3,6 +3,8 @@
 import { useState } from "react";
 import MarketingOptIn from "./MarketingOptIn";
 import { TEOS_API, optInBody } from "../lib/optin";
+import AgeQuestion from "./AgeQuestion";
+import { validateAge, ageFields, guardianNeeded, GUARDIAN_NEEDED_MESSAGE, type AgeBand } from "../lib/age";
 
 // Joins the artist's fan community. Email news is a separate, UNTICKED choice (TEOS privacy
 // phase 1): ticked, TEOS emails a confirmation link and only the click records consent. The
@@ -21,18 +23,27 @@ export default function JoinCommunity({
   const [optIn, setOptIn] = useState(false);
   const [sentOptIn, setSentOptIn] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  // TEOS fan age check (2026-11-27): the age answer; 13 to 17 also gives a parent's email.
+  const [age, setAge] = useState<AgeBand | "">("");
+  const [guardian, setGuardian] = useState("");
+  const [msg, setMsg] = useState("");
+  const [parentAsked, setParentAsked] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.includes("@")) return;
-    setStatus("loading");
+    const ageMsg = validateAge(age, guardian, email);
+    if (ageMsg) { setMsg(ageMsg); setStatus("error"); return; }
+    setStatus("loading"); setMsg("");
     try {
       const res = await fetch(TEOS_API + "/public/fan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(optInBody({ slug, email, name, form: "join", optIn })),
+        body: JSON.stringify(optInBody({ slug, email, name, form: "join", optIn, age: ageFields(age, guardian) })),
       });
-      if (!res.ok) throw new Error("failed");
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || j?.ok === false) { setMsg(j?.message || "Something went wrong. Please try again."); setStatus("error"); return; }
+      setParentAsked(guardianNeeded(j));
       setSentOptIn(optIn);
       setStatus("done");
     } catch {
@@ -59,7 +70,7 @@ export default function JoinCommunity({
             className="font-body text-base text-white/80 inline-block px-6 py-4 rounded-xl border"
             style={{ borderColor: brandColor + "55", background: brandColor + "14" }}
           >
-            You&apos;re in. Welcome to the community. 🎶
+            {parentAsked ? GUARDIAN_NEEDED_MESSAGE : <>You&apos;re in. Welcome to the community. 🎶</>}
             {sentOptIn ? (
               <span className="block text-sm text-white/60 mt-2">
                 Check your inbox and click the link to confirm you want news by email.
@@ -97,12 +108,13 @@ export default function JoinCommunity({
             <div className="mt-3">
               <MarketingOptIn artist={artistName} checked={optIn} onChange={setOptIn} />
             </div>
+            <AgeQuestion id={"join-age-" + slug} value={age} onChange={setAge} guardianEmail={guardian} onGuardianEmail={setGuardian} />
           </form>
         )}
 
         {status === "error" ? (
           <div className="font-body text-sm mt-3" style={{ color: "#f87171" }}>
-            Something went wrong. Please try again.
+            {msg || "Something went wrong. Please try again."}
           </div>
         ) : null}
       </div>

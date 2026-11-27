@@ -26,8 +26,11 @@ export const OPTIN_NOTE =
 export type OptInForm = "join" | "giveaway" | "events" | "merch" | "membership" | "unlock" | "chat" | "fan-list" | "notify";
 
 /** The body sent to POST /public/fan for a news opt-in. Always says marketing_opt_in explicitly. */
-export function optInBody(p: { slug: string; email: string; name?: string | null; form: OptInForm; optIn: boolean }) {
+// Fan age check (TEOS, 2026-11-27): `age` is ageFields() from lib/age.ts. TEOS requires it on /public/fan.
+export function optInBody(p: { slug: string; email: string; name?: string | null; form: OptInForm; optIn: boolean;
+                               age?: { age_band?: string; guardian_email?: string } }) {
   return {
+    ...(p.age || {}),
     slug: p.slug,
     email: p.email.trim(),
     name: (p.name || "").trim() || null,
@@ -42,14 +45,18 @@ export function optInBody(p: { slug: string; email: string; name?: string | null
  * After a form's own action succeeded (entry, enrolment, checkout, unlock, chat join): if the box
  * was ticked, ask TEOS to send the confirmation email. Never throws and never blocks the main action.
  */
-export async function requestNewsOptIn(p: { slug: string; email: string; name?: string | null; form: OptInForm }): Promise<boolean> {
+export async function requestNewsOptIn(p: { slug: string; email: string; name?: string | null; form: OptInForm;
+                                         age?: { age_band?: string; guardian_email?: string } }): Promise<boolean> {
   try {
     const res = await fetch(TEOS_API + "/public/fan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(optInBody({ ...p, optIn: true })),
     });
-    return res.ok;
+    if (!res.ok) return false;
+    // An under-13 answer is refused with ok:false and nothing is sent (the forms check first, so this is a backstop).
+    const j = await res.json().catch(() => ({}));
+    return !(j && j.ok === false);
   } catch {
     return false;
   }

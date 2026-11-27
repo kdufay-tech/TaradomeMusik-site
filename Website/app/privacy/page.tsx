@@ -1,3 +1,5 @@
+import { CHILDREN_BODY, CHILDREN_HEADING, PRIVACY_NOTICE_VERSION } from "../../lib/privacyCopy";
+
 export default function PrivacyPage() {
   return (
     <section className="min-h-screen bg-ink-950 pt-28 pb-24 px-6">
@@ -12,10 +14,13 @@ export default function PrivacyPage() {
           <p>We use collected information to operate and improve our services, send you updates about new releases and events (with your consent), respond to your inquiries, and analyze usage patterns to improve user experience.</p>
           <h2 className="font-display text-xl font-bold text-white pt-4">Data Sharing</h2>
           <p>We do not sell your personal information. We may share information with service providers who help us operate our platform (such as email delivery services and analytics tools), or as required by law.</p>
+          <h2 className="font-display text-xl font-bold text-white pt-4">{CHILDREN_HEADING}</h2>
+          <p>{CHILDREN_BODY}</p>
           <h2 className="font-display text-xl font-bold text-white pt-4">Your Rights</h2>
           <p>You may request access to, correction of, or deletion of your personal data at any time by contacting us at info@taradomemusik.com. You can unsubscribe from marketing emails at any time using the link in each email.</p>
           <h2 className="font-display text-xl font-bold text-white pt-4">Contact</h2>
           <p>For privacy-related questions, contact us at <a href="mailto:info@taradomemusik.com" className="text-ember-400 no-underline">info@taradomemusik.com</a>.</p>
+          <p className="text-white/25 pt-4">Notice version: {PRIVACY_NOTICE_VERSION}</p>
           <p className="text-white/20 pt-4">© 2026 TáraDome Entertainment Group. All rights reserved.</p>
         </div>
       </div>

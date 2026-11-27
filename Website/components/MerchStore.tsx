@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import type { PublicMerchItem } from "../lib/teos";
 import MarketingOptIn from "./MarketingOptIn";
 import { requestNewsOptIn } from "../lib/optin";
+import AgeQuestion from "./AgeQuestion";
+import { validateAge, ageFields, type AgeBand } from "../lib/age";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -65,10 +67,18 @@ function ProductCard({
   const [email, setEmail] = useState("");
   const [optIn, setOptIn] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  // TEOS fan age check (2026-11-27): asked only when the news box is ticked (the news sign-up is what captures the
+  // fan); the checkout itself carries no age.
+  const [age, setAge] = useState<AgeBand | "">("");
+  const [guardian, setGuardian] = useState("");
+  const [ageMsg, setAgeMsg] = useState("");
 
   async function buy(e: React.FormEvent) {
     e.preventDefault();
     if (!email.includes("@")) return;
+    const m = optIn ? validateAge(age, guardian, email) : null;
+    if (m) { setAgeMsg(m); return; }
+    setAgeMsg("");
     setStatus("loading");
     try {
       const res = await fetch(TEOS_API + "/public/checkout", {
@@ -78,7 +88,7 @@ function ProductCard({
       });
       const data = await res.json();
       if (!res.ok || !data?.url) throw new Error("failed");
-      if (optIn) await requestNewsOptIn({ slug, email, form: "merch" });
+      if (optIn) await requestNewsOptIn({ slug, email, form: "merch", age: ageFields(age, guardian) });
       window.location.href = data.url;
     } catch {
       setStatus("error");
@@ -133,6 +143,10 @@ function ProductCard({
                 className="w-full bg-ink-950 border border-white/10 rounded-lg px-3 py-2 text-white font-body text-[13px] placeholder:text-white/30 focus:outline-none focus:border-white/25"
               />
               <MarketingOptIn artist={artistName} checked={optIn} onChange={setOptIn} compact />
+              {optIn ? (
+                <AgeQuestion id={"merch-age-" + item.id} value={age} onChange={setAge} guardianEmail={guardian} onGuardianEmail={setGuardian} compact />
+              ) : null}
+              {ageMsg ? <span className="font-body text-[11px]" style={{ color: "#f87171" }}>{ageMsg}</span> : null}
               <button
                 type="submit"
                 disabled={status === "loading"}

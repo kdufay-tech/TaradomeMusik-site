@@ -5,6 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 import { safeCommunityImageUrl } from "../lib/chatUrl";
 import MarketingOptIn from "./MarketingOptIn";
 import { requestNewsOptIn } from "../lib/optin";
+import AgeQuestion from "./AgeQuestion";
+import { validateAge, ageFields, GUARDIAN_NEEDED_MESSAGE, type AgeBand } from "../lib/age";
 import { keyProblemText, resolvePublishableKey } from "../lib/publishableKey";
 import { communityHistoryUrl, createHeartbeatMonitor, listenCommunityFeed, loadWithRetry, mergeMessages, type Reconnector } from "../lib/realtimeReconnect";
 
@@ -51,6 +53,11 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
   const [joined, setJoined] = useState(false);
   // Joining the chat is NOT consent to marketing email (TEOS privacy phase 1): separate, unticked box.
   const [optIn, setOptIn] = useState(false);
+  // TEOS fan age check (2026-11-27): the age answer is given once, at join, and sent with every post. A 13-17 fan's
+  // posts are held by TEOS until a parent agrees; the notice says so and the text stays in the box.
+  const [age, setAge] = useState<AgeBand | "">("");
+  const [guardian, setGuardian] = useState("");
+  const [notice, setNotice] = useState("");
   // connecting -> live; after a drop (e.g. the 24 h cap on public Realtime connections) "reconnecting" until the
   // channel is back; "off" when the build has no valid publishable key.
   const [feed, setFeed] = useState<"connecting" | "live" | "reconnecting" | "off">(supabase ? "connecting" : "off");
@@ -63,7 +70,10 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
   useEffect(() => {
     try {
       const n = localStorage.getItem("tm_name") || ""; const e = localStorage.getItem("tm_email") || "";
-      setName(n); setEmail(e); if (e.includes("@")) setJoined(true);
+      const a = (localStorage.getItem("tm_age") || "") as AgeBand | ""; const g = localStorage.getItem("tm_guardian") || "";
+      setName(n); setEmail(e); setAge(a); setGuardian(g);
+      // Someone who joined before the age question is asked it now (validateAge is null only for a usable answer).
+      if (e.includes("@") && validateAge(a, g, e) === null) setJoined(true);
     } catch { /* ignore */ }
   }, []);
 
@@ -123,9 +133,15 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
   function join(e: React.FormEvent) {
     e.preventDefault();
     if (!email.includes("@")) return;
-    try { localStorage.setItem("tm_name", name); localStorage.setItem("tm_email", email); } catch { /* ignore */ }
+    const ageMsg = validateAge(age, guardian, email);
+    if (ageMsg) { setNotice(ageMsg); return; }
+    setNotice("");
+    try {
+      localStorage.setItem("tm_name", name); localStorage.setItem("tm_email", email);
+      localStorage.setItem("tm_age", age); localStorage.setItem("tm_guardian", guardian.trim());
+    } catch { /* ignore */ }
     setJoined(true);
-    if (optIn) void requestNewsOptIn({ slug, email, name, form: "chat" });
+    if (optIn) void requestNewsOptIn({ slug, email, name, form: "chat", age: ageFields(age, guardian) });
   }
 
   async function upload(file: File) {
@@ -156,10 +172,17 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
         method: "POST", headers: { "Content-Type": "application/json" },
         // attachment_path is what TEOS reads (M4); attachment_url is kept so the post also works
         // against a TEOS API deployed before M4.
-        body: JSON.stringify({ email, name, body, attachment_path: att?.path || undefined, attachment_url: att?.url, attachment_type: att?.type, attachment_name: att?.name, attachment_mime: att?.mime }),
+        body: JSON.stringify({ email, name, body, attachment_path: att?.path || undefined, attachment_url: att?.url, attachment_type: att?.type, attachment_name: att?.name, attachment_mime: att?.mime, ...ageFields(age, guardian) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Your message was not sent.");
+      if (data?.status === "guardian_pending") { setText(body); setPending(att); setNotice(GUARDIAN_NEEDED_MESSAGE); return; }
+      if (data?.status === "under_13") {
+        setText(""); setPending(null); setJoined(false); setNotice(data?.message || "");
+        try { localStorage.removeItem("tm_age"); localStorage.removeItem("tm_guardian"); } catch { /* ignore */ }
+        return;
+      }
+      setNotice("");
       if (data?.message) setMessages((m) => mergeMessages(m, [data.message]));
     } catch (err: any) {
       setText(body); setPending(att);
@@ -218,9 +241,12 @@ export default function CommunityChat({ slug, artistName, brandColor }: { slug: 
                 <div className="mt-2">
                   <MarketingOptIn artist={artistName} checked={optIn} onChange={setOptIn} compact />
                 </div>
+                <AgeQuestion id={"chat-age-" + slug} value={age} onChange={setAge} guardianEmail={guardian} onGuardianEmail={setGuardian} compact />
+                {notice ? <p className="font-body text-[12px] mt-2" style={{ color: "#f87171" }}>{notice}</p> : null}
               </form>
             ) : (
               <>
+                {notice ? <p className="font-body text-[12px] text-white/70 mb-2">{notice}</p> : null}
                 {pending ? (
                   <div className="flex items-center gap-2 mb-2 text-white/70 font-body text-[12px]">
                     🖼️ {pending.name}<button onClick={() => setPending(null)} className="text-white/40 hover:text-white/70">✕</button>

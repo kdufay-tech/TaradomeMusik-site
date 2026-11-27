@@ -85,6 +85,7 @@ test("every fan form that collects an email carries the opt-in box (or is the co
   assert.ok(collecting.length >= 9, "expected the fan forms, found " + collecting.map((f) => f.p));
   for (const f of collecting) {
     if (f.p === "components/ContactForm.tsx") continue;           // a message to the label, not a sign-up
+    if (f.p === "components/AgeQuestion.tsx") continue;          // the parent's address, inside forms that carry the box
     assert.ok(/<MarketingOptIn\b/.test(f.src) || /<FanListForm\b/.test(f.src), f.p + " collects an email without the opt-in box");
   }
 });

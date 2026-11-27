@@ -3,6 +3,8 @@
 import { useState } from "react";
 import MarketingOptIn from "./MarketingOptIn";
 import { requestNewsOptIn } from "../lib/optin";
+import AgeQuestion from "./AgeQuestion";
+import { validateAge, ageFields, type AgeBand } from "../lib/age";
 
 const TEOS_API =
   process.env.NEXT_PUBLIC_TEOS_API ||
@@ -39,6 +41,11 @@ export default function UnlockContent({
   const [email, setEmail] = useState("");
   const [optIn, setOptIn] = useState(false);
   const [askedNews, setAskedNews] = useState(false);
+  // TEOS fan age check (2026-11-27): asked only when the news box is ticked (the news sign-up is what captures the
+  // fan); the purchase or lookup itself carries no age.
+  const [age, setAge] = useState<AgeBand | "">("");
+  const [guardian, setGuardian] = useState("");
+  const [ageMsg, setAgeMsg] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [tier, setTier] = useState("free");
   const [items, setItems] = useState<Item[]>([]);
@@ -46,6 +53,9 @@ export default function UnlockContent({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.includes("@")) return;
+    const m = optIn ? validateAge(age, guardian, email) : null;
+    if (m) { setAgeMsg(m); return; }
+    setAgeMsg("");
     setStatus("loading");
     try {
       const res = await fetch(
@@ -60,7 +70,7 @@ export default function UnlockContent({
       const data = await res.json();
       setTier(String(data.tier || "free"));
       setItems(Array.isArray(data.items) ? data.items : []);
-      if (optIn) setAskedNews(await requestNewsOptIn({ slug, email, form: "unlock" }));
+      if (optIn) setAskedNews(await requestNewsOptIn({ slug, email, form: "unlock", age: ageFields(age, guardian) }));
       setStatus("done");
     } catch {
       setStatus("error");
@@ -102,6 +112,10 @@ export default function UnlockContent({
           </div>
           <div className="mt-3">
             <MarketingOptIn artist={artistName} checked={optIn} onChange={setOptIn} compact />
+            {optIn ? (
+              <AgeQuestion id={"unlock-age-" + slug} value={age} onChange={setAge} guardianEmail={guardian} onGuardianEmail={setGuardian} compact />
+            ) : null}
+            {ageMsg ? <p className="font-body text-[12px] mt-2" style={{ color: "#f87171" }}>{ageMsg}</p> : null}
           </div>
         </form>
         {askedNews ? (

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import MarketingOptIn from "./MarketingOptIn";
 import { TEOS_API, optInBody, type OptInForm } from "../lib/optin";
+import AgeQuestion from "./AgeQuestion";
+import { validateAge, ageFields, guardianNeeded, GUARDIAN_NEEDED_MESSAGE, type AgeBand } from "../lib/age";
 
 /* Email-news sign-up (home "Join the Fan List", an artist's "Notify me"). These forms used to POST
  * to a CRM route that does not exist on this static site (404), so every sign-up was lost.
@@ -24,19 +26,28 @@ export default function FanListForm({
   const [email, setEmail] = useState("");
   const [optIn, setOptIn] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  // TEOS fan age check (2026-11-27): the age answer; 13 to 17 also gives a parent's email.
+  const [age, setAge] = useState<AgeBand | "">("");
+  const [guardian, setGuardian] = useState("");
+  const [msg, setMsg] = useState("");
+  const [parentAsked, setParentAsked] = useState(false);
   const artist = artists.find((a) => a.slug === slug);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!slug || !email.includes("@") || !optIn) return;
-    setStatus("loading");
+    const ageMsg = validateAge(age, guardian, email);
+    if (ageMsg) { setMsg(ageMsg); setStatus("error"); return; }
+    setStatus("loading"); setMsg("");
     try {
       const res = await fetch(TEOS_API + "/public/fan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(optInBody({ slug, email, form, optIn })),
+        body: JSON.stringify(optInBody({ slug, email, form, optIn, age: ageFields(age, guardian) })),
       });
-      if (!res.ok) throw new Error("failed");
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || j?.ok === false) { setMsg(j?.message || "Something went wrong. Please try again."); setStatus("error"); return; }
+      setParentAsked(guardianNeeded(j));
       setStatus("done");
     } catch {
       setStatus("error");
@@ -47,6 +58,7 @@ export default function FanListForm({
     return (
       <div className="font-body text-sm text-white/80 max-w-md mx-auto px-5 py-4 rounded-xl border border-white/10 bg-white/[0.03]">
         Almost there. Check your inbox and click the link to confirm you want news from {artist?.name || "us"}.
+        {parentAsked ? <span className="block mt-2 text-white/60">{GUARDIAN_NEEDED_MESSAGE}</span> : null}
       </div>
     );
   }
@@ -70,7 +82,8 @@ export default function FanListForm({
       <div className="mt-3">
         <MarketingOptIn artist={artist?.name || "this artist"} checked={optIn} onChange={setOptIn} required />
       </div>
-      {status === "error" ? <p className="font-body text-xs mt-2" style={{ color: "#f87171" }}>Something went wrong. Please try again.</p> : null}
+      <AgeQuestion id={"fanlist-age-" + form} value={age} onChange={setAge} guardianEmail={guardian} onGuardianEmail={setGuardian} />
+      {status === "error" ? <p className="font-body text-xs mt-2" style={{ color: "#f87171" }}>{msg || "Something went wrong. Please try again."}</p> : null}
     </form>
   );
 }
