@@ -29,7 +29,7 @@ export const AGE_MESSAGES = {
   notYourOwn: "Please give a parent or guardian's email, not your own.",
   under13: "Sorry, you need to be 13 or older to sign up.",
 } as const;
-export const GUARDIAN_NEEDED_MESSAGE = "We've emailed your parent or guardian. Once they agree, we'll send you everything you signed up for.";
+export const GUARDIAN_NEEDED_MESSAGE = "Thanks. Before we send you anything, we've emailed to check with you or your parent or guardian. Once that's done, we'll send you everything you signed up for.";
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const norm = (v: string | null | undefined) => String(v || "").trim().toLowerCase();

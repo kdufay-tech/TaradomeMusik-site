@@ -93,3 +93,10 @@ test("privacy notice: the children section and the new version", () => {
   const api = teos("apps/api/src/modules/privacy/privacy.config.ts");
   if (api) assert.ok(api.includes('POLICY_VERSION = "' + PRIVACY_NOTICE_VERSION + '"'), "the notice version TEOS records consent under");
 });
+
+test("the parent-needed message matches TEOS and never says a parent was emailed (V620: an address on file is checked with its owner first)", async () => {
+  const { GUARDIAN_NEEDED_MESSAGE } = await import("../lib/age.ts");
+  assert.equal(GUARDIAN_NEEDED_MESSAGE, "Thanks. Before we send you anything, we've emailed to check with you or your parent or guardian. Once that's done, we'll send you everything you signed up for.");
+  const t = teos("apps/web/app/lib/ageCopy.ts");
+  if (t) assert.ok(t.includes(GUARDIAN_NEEDED_MESSAGE), "TEOS ageCopy.ts carries the same words");
+});
